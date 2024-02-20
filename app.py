@@ -46,9 +46,10 @@ ai_response = query_cohere(story_text, question)
 def ai_response(story_text, question):
   return query_cohere(story_text, question)
 
-# Create the interface
-gr.Interface(
+iface = gr.Interface(
   fn=ai_response,
-  inputs=[gr.inputs.Textbox(label="Story Text"), gr.inputs.Textbox(label="Question")],
-  outputs=gr.outputs.Textbox(label="AI Response")
-).launch()
+  inputs=["Story Text", "Question"],
+  outputs=gr.outputs.Textbox(label="Answer")
+)
+
+iface.launch()
