@@ -1,8 +1,29 @@
-# Use gradio to create a simple UI to query the stories ie a chatbot kids can easily interact with and learn from. We will call it BibleBot
+# Now the interface using gradio based on the previous code
 # Import libraries
-import gradio as gr
+from bs4 import BeautifulSoup
+import requests
+import re
 import cohere
+import gradio as gr
 
+# Bible site to scrape
+bible_url = "https://www.biblegateway.com/passage/?search={}&version=NIV"
+
+# Scrape the page
+page = requests.get(bible_url.format("John")) # sample URL
+
+# Extract the story text
+soup = BeautifulSoup(page.content, 'html.parser')
+
+# Extract the story text
+story_text = soup.find('div', class_='passage-text').get_text()
+
+# Preprocess the text
+story_text = story_text.replace('\n', ' ')
+story_text = re.sub(r'\s+', ' ', story_text)
+story_text = story_text.strip()
+
+# Set up Cohere API client
 co = cohere.Client('q81O6CJT17c7qfSQc7U693xvFwAVf9rDhsjoHv2b')
 
 # Define a function to query text with Cohere
@@ -15,24 +36,30 @@ def query_cohere(text, question):
   
   return response.generations[0].text
 
-# Create a Gradio interface
-def biblebot(story, question):
-  return query_cohere(story, question)
+# Sample query
+story_text = 'Water into wine.'
+question = "What is this story about? What is the moral?"
 
-# Now we can use the BibleBot to query the stories and get responses
-# to run it on the terminal, use the command below
-# python3 biblebot.py
+ai_response = query_cohere(story_text, question)
 
-# We can style our app a bit more by adding a title and description
-iface = gr.Interface(
-    fn=biblebot, 
-    inputs=["text", "text"], 
-    outputs="text",
-    title="BibleBot",
-    description="A chatbot kids can easily interact with and learn from."
-    )
+# Style the interface
+def ai_response(story_text, question):
+  return query_cohere(story_text, question)
 
-iface.launch()
+iface = gr.Interface(ai_response,
+              [gr.inputs.Textbox("text"), gr.inputs.Textbox("text")],
+              gr.outputs.Textbox("text")
+              gr.title="biblebot",
+              description="Ask a question about a Bible story",
+              theme="huggingface",
+              layout="vertical"
+              thumbnail="https://www.biblegateway.com/assets/images/logo.png",
+              examples=[
+                ["Water into wine", "What is this story about?"],
+                ["Feeding the 5000", "What is the moral of this story?"],
+                ["The Prodigal Son", "Where did it happen?"]
+              ]
+              )
 
-# Now we can run the app and interact with it on the browser
-# python3 app.py
+
+iface.launch(inline=True)
