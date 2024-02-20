@@ -47,8 +47,8 @@ def ai_response(story_text, question):
   return query_cohere(story_text, question)
 
 iface = gr.Interface(ai_response,
-              [gr.inputs.Textbox("text"), gr.inputs.Textbox("text")],
-              gr.outputs.Textbox("text"),
+              [gr.inputs.Text("text"), gr.inputs.Text("text")],
+              gr.outputs.Text("text"),
               title="Bible Story Question Answering",
               description="Ask a question about a Bible story",
               theme="huggingface",
