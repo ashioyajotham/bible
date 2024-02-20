@@ -48,11 +48,11 @@ def ai_response(story_text, question):
 
 iface = gr.Interface(ai_response,
               [gr.inputs.Textbox("text"), gr.inputs.Textbox("text")],
-              gr.outputs.Textbox("text")
-              gr.title="biblebot",
+              gr.outputs.Textbox("text"),
+              title="Bible Story Question Answering",
               description="Ask a question about a Bible story",
               theme="huggingface",
-              layout="vertical"
+              layout="vertical",
               thumbnail="https://www.biblegateway.com/assets/images/logo.png",
               examples=[
                 ["Water into wine", "What is this story about?"],
