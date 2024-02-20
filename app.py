@@ -48,8 +48,8 @@ def ai_response(story_text, question):
 
 iface = gr.Interface(
   fn=ai_response,
-  inputs=["Story Text", "Question"],
-  outputs="Answer"
+  inputs=["textbox", "textbox"],
+  outputs="textbox"
 )
 
 iface.launch()
