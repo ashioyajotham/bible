@@ -51,7 +51,14 @@ iface = gr.Interface(
   inputs=[gr.Textbox(label="Story Text"), gr.Textbox(label="Question")],
   outputs="textbox",
   title="Bible Story AI",
-  theme="huggingface"
+  theme=gr.themes.Soft()
 )
 
 iface.launch()
+
+# Future directions
+# 1. Add more Bible stories
+# 2. Add more questions
+# 3. Add more AI models
+# 4. Add more interfaces
+# 5. Add more styling
