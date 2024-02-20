@@ -46,20 +46,9 @@ ai_response = query_cohere(story_text, question)
 def ai_response(story_text, question):
   return query_cohere(story_text, question)
 
-iface = gr.Interface(ai_response,
-              [gr.inputs.Text("text"), gr.inputs.Text("text")],
-              gr.outputs.Textbox(),
-              title="Bible Story Question Answering",
-              description="Ask a question about a Bible story",
-              theme="huggingface",
-              layout="vertical",
-              thumbnail="https://www.biblegateway.com/assets/images/logo.png",
-              examples=[
-                ["Water into wine", "What is this story about?"],
-                ["Feeding the 5000", "What is the moral of this story?"],
-                ["The Prodigal Son", "Where did it happen?"]
-              ]
-              )
-
-
-iface.launch(inline=True)
+# Create the interface
+gr.Interface(
+  fn=ai_response,
+  inputs=[gr.inputs.Textbox(label="Story Text"), gr.inputs.Textbox(label="Question")],
+  outputs=gr.outputs.Textbox(label="AI Response")
+).launch()
