@@ -48,11 +48,10 @@ def ai_response(story_text, question):
 
 iface = gr.Interface(
   fn=ai_response,
-  inputs=[gr.Textbox(label="Story Text"), gr.Textbox(default=question, label="Question")],
+  inputs=[gr.Textbox(label="Story Text"), gr.Textbox(label="Question")],
   outputs="textbox",
   title="Bible Story AI",
-  theme="huggingface",
-  layout="vertical"
+  theme="huggingface"
 )
 
 iface.launch()
