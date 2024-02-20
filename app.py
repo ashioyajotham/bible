@@ -48,7 +48,7 @@ def ai_response(story_text, question):
 
 iface = gr.Interface(ai_response,
               [gr.inputs.Text("text"), gr.inputs.Text("text")],
-              gr.outputs.Text("text"),
+              gr.outputs.Textbox(),
               title="Bible Story Question Answering",
               description="Ask a question about a Bible story",
               theme="huggingface",
