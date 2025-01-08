@@ -1,9 +1,9 @@
 from typing import Dict, List
 import json
 from datetime import datetime
-from ..services.gpt_service import GPTService
-from ..services.serper_service import SerperService
-from ..config.settings import Config
+from src.services.gpt_service import GPTService
+from src.services.serper_service import SerperService
+from src.config.settings import Config
 
 class SearchAgent:
     def __init__(self):

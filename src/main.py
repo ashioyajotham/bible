@@ -6,10 +6,10 @@ from typing import Dict, List
 import logging
 from dotenv import load_dotenv
 
-from src.agent.bible_agent import BibleAgent
-from src.agent.search_agent import SearchAgent
-from src.utils.helpers import setup_logging, create_export_filename
-from src.config.settings import Config
+from agent.bible_agent import BibleAgent
+from agent.search_agent import SearchAgent
+from utils.helpers import setup_logging, create_export_filename
+from config.settings import Config
 
 def setup_args() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Scripture AI Agent CLI")

@@ -1,10 +1,10 @@
 import random
 import requests
 from datetime import datetime
-from ..services.gpt_service import GPTService 
-from ..services.serper_service import SerperService
-from ..models.verse import Verse
-from ..config.settings import Config
+from src.services.gpt_service import GPTService 
+from src.services.serper_service import SerperService
+from src.models.verse import Verse
+from src.config.settings import Config
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -25,7 +25,7 @@ class BibleAgent:
             "psalm/23:1"
         ]
         verse_ref = random.choice(common_verses)
-        response = requests.get(f"{BIBLE_API_BASE_URL}/{verse_ref}")
+        response = requests.get(f"{Config.BIBLE_API_BASE_URL}/{verse_ref}")
         data = response.json()
         
         return Verse(
