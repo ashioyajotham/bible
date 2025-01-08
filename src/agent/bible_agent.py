@@ -9,18 +9,37 @@ from src.models.verse import Verse
 from src.config.settings import Config
 from src.services.llm.gemini_llm import GeminiLLM
 from src.services.llm.hf_llm import HuggingFaceLLM
+from src.services.llm.model_selector import ModelSelector, ModelType, TaskType
+from typing import Dict, List, Optional
 
 from dotenv import load_dotenv
 load_dotenv()
 
 class BibleAgent:
     def __init__(self):
-        if Config.ACTIVE_LLM == 'gemini':
-            self.llm = GeminiLLM(api_key=Config.GEMINI_API_KEY)
-        else:
-            self.llm = HuggingFaceLLM(model_id=Config.HF_MODEL_ID)
+        self.model_selector = ModelSelector()
+        self.models = {
+            ModelType.GEMINI: GeminiLLM(api_key=Config.GEMINI_API_KEY),
+            ModelType.LLAMA: HuggingFaceLLM(model_id=Config.HF_MODEL_ID)
+        }
+        
+        self.current_model = self.models[ModelType.GEMINI]  # Default model
+
         self.serper = SerperService(api_key=Config.SERPER_API_KEY)
+        
+        # Agent State
+        self.memory = []
         self.favorites = []
+        self.context = {}
+        
+        # Agent Tools
+        self.tools = {
+            'search': self.search_biblical_insights,
+            'reflect': self.generate_reflection,
+            'verse': self.get_daily_verse,
+            'teach': self.get_teachings,
+            'analyze': self.analyze_passage
+        }
         
     def get_daily_verse(self) -> Verse:
         """Get verse based on date or season"""
@@ -71,9 +90,22 @@ class BibleAgent:
         }
 
     def generate_reflection(self, verse: Verse) -> str:
-        """Generate a reflection on a Bible verse using GPT-4"""
-        prompt = f"Provide a deep spiritual reflection on this verse: {verse.text} ({verse.reference})"
-        return self.llm.generate(prompt)
+        """Generate reflection using best-suited model"""
+        selected_model = self.model_selector.select_model(
+            task=TaskType.REFLECTION,
+            context={'verse_length': len(verse.text)}
+        )
+        
+        try:
+            self.current_model = self.models[selected_model]
+            prompt = f"Provide a deep spiritual reflection on this verse: {verse.text} ({verse.reference})"
+            response = self.current_model.generate(prompt)
+            self.model_selector.track_performance(selected_model, True)
+            return response
+        except Exception as e:
+            self.model_selector.track_performance(selected_model, False)
+            fallback_model = next(m for m in ModelType if m != selected_model)
+            return self.models[fallback_model].generate(prompt)
 
     def save_favorite(self, verse: Verse):
         """Save a verse to favorites"""
@@ -87,7 +119,7 @@ class BibleAgent:
 
     def search_biblical_insights(self, query: str) -> dict:
         """Search for biblical insights using both GPT and online sources"""
-        gpt_analysis = self.gpt.get_completion(f"Provide biblical insight on: {query}")
+        gpt_analysis = self.get_llm_response(f"Provide biblical insight on: {query}", task_type='search')
         online_results = self.serper.search(f"biblical meaning {query}")
         
         return {
@@ -99,4 +131,92 @@ class BibleAgent:
     def get_related_verses(self, topic: str) -> list:
         """Get related Bible verses for a topic"""
         prompt = f"List 3 relevant Bible verses about {topic}"
-        return self.gpt.get_completion(prompt).split('\n')
+        return self.get_llm_response(prompt, task_type='related_verses').split('\n')
+
+    def plan_action(self, user_input: str) -> Dict:
+        """Strategic planning for agent actions"""
+        prompt = f"Determine best action for: {user_input}"
+        plan = self.get_llm_response(prompt, task_type='planning')
+        
+        return {
+            'input': user_input,
+            'plan': plan,
+            'tool': self._select_tool(plan),
+            'context': self._get_context()
+        }
+
+    def execute_action(self, plan: Dict) -> Dict:
+        """Execute planned action using appropriate tool"""
+        tool = self.tools.get(plan['tool'])
+        if not tool:
+            return {'error': 'Tool not found'}
+            
+        result = tool(plan['input'])
+        self._update_memory(plan, result)
+        return result
+
+    def _select_tool(self, plan: str) -> str:
+        """Select appropriate tool based on plan"""
+        keywords = {
+            'search': ['find', 'search', 'look up'],
+            'reflect': ['reflect', 'meditate', 'think'],
+            'verse': ['verse', 'scripture', 'passage'],
+            'teach': ['teach', 'explain', 'understand'],
+            'analyze': ['analyze', 'study', 'examine']
+        }
+        
+        for tool, words in keywords.items():
+            if any(word in plan.lower() for word in words):
+                return tool
+        return 'search'  # default tool
+
+    def _get_context(self) -> Dict:
+        """Get current context for agent"""
+        return {
+            'date': datetime.now(),
+            'last_interaction': self.memory[-1] if self.memory else None,
+            'favorites_count': len(self.favorites)
+        }
+
+    def _update_memory(self, plan: Dict, result: Dict):
+        """Update agent memory with interaction"""
+        self.memory.append({
+            'timestamp': datetime.now(),
+            'plan': plan,
+            'result': result,
+            'context': self._get_context()
+        })
+
+    def remember(self, interaction: dict):
+        """Agent memory system"""
+        self.memory.append({
+            'timestamp': datetime.now(),
+            'interaction': interaction,
+            'context': {'date': datetime.now().date()}
+        })
+
+    def get_llm_response(self, prompt: str, task_type: str) -> str:
+        selected_model = self.model_selector.select_model(
+            task_type=task_type,
+            context=self._get_context()
+        )
+        
+        try:
+            self.current_model = self.models[selected_model]
+            response = self.current_model.generate(prompt)
+            self.model_selector.track_performance(selected_model, True)
+            return response
+        except Exception as e:
+            logging.error(f"Model {selected_model} failed: {str(e)}")
+            self.model_selector.track_performance(selected_model, False)
+            return self._fallback_response(prompt)
+
+    def _fallback_response(self, prompt: str) -> str:
+        """Try fallback models if primary fails"""
+        for model_type in self.model_selector.fallback_order:
+            if model_type in self.models:
+                try:
+                    return self.models[model_type].generate(prompt)
+                except:
+                    continue
+        return "Sorry, all models are currently unavailable."

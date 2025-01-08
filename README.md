@@ -13,34 +13,39 @@ The Scripture AI Agent is a Python-based application designed to provide users w
 
 ## Project Structure
 ```
-scripture-ai-agent
-├── src
-│   ├── main.py
-│   ├── agent
+scripture-ai-agent/
+├── src/
+│   ├── agent/
 │   │   ├── __init__.py
 │   │   ├── bible_agent.py
 │   │   └── search_agent.py
-│   ├── services
+│   ├── services/
 │   │   ├── __init__.py
-│   │   ├── gpt_service.py
-│   │   └── serper_service.py
-│   ├── models
+│   │   ├── serper_service.py
+│   │   └── llm/
+│   │       ├── __init__.py
+│   │       ├── base_llm.py
+│   │       ├── gemini_llm.py
+│   │       └── hf_llm.py
+│   ├── models/
 │   │   ├── __init__.py
 │   │   └── verse.py
-│   └── utils
+│   ├── config/
+│   │   ├── __init__.py
+│   │   └── settings.py
+│   └── utils/
 │       ├── __init__.py
 │       └── helpers.py
-├── config
-│   └── settings.py
 ├── requirements.txt
-├── .env
+├── setup.py
 └── README.md
 ```
 
 ## Installation
 1. Clone the repository:
    ```
-   git clone <repository-url>
+   git clone https://github.com/ashioyajotham/bible.git
+
    ```
 2. Navigate to the project directory:
    ```
@@ -55,6 +60,15 @@ scripture-ai-agent
 To run the application, execute the following command:
 ```
 python src/main.py
+
+# Interactive Mode
+python src/main.py --interactive
+
+# Get Daily Verse
+python src/main.py --verse
+
+# Search Biblical Insights
+python src/main.py --search "faith"
 ```
 
 ## Configuration
