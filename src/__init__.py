@@ -1,8 +1,4 @@
-"""
-Scripture AI Agent
-Core package for Bible study and research assistant
-"""
-
+"""Scripture AI Agent Core Package for Bible study and research assistant"""
 __version__ = "0.1.0"
 
 from .agent.bible_agent import BibleAgent

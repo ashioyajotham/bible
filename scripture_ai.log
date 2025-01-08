@@ -1,0 +1,2 @@
+2025-01-08 18:26:21,237 - ERROR - Application error: GPTService.__init__() missing 1 required positional argument: 'api_key'
+2025-01-08 18:30:26,399 - ERROR - Application error: name 'Config' is not defined

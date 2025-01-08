@@ -1,14 +1,14 @@
 from typing import Dict, List
 import json
 from datetime import datetime
-from src.services.gpt_service import GPTService
-from src.services.serper_service import SerperService
-from config.settings import SERPER_API_KEY
+from ..services.gpt_service import GPTService
+from ..services.serper_service import SerperService
+from ..config.settings import Config
 
 class SearchAgent:
     def __init__(self):
-        self.gpt = GPTService()
-        self.serper = SerperService()
+        self.gpt = GPTService(api_key=Config.OPENAI_API_KEY)
+        self.serper = SerperService(api_key=Config.SERPER_API_KEY)
         self.cache = {}
         
     def search_insights(self, query: str) -> Dict:

@@ -4,14 +4,15 @@ from datetime import datetime
 from ..services.gpt_service import GPTService 
 from ..services.serper_service import SerperService
 from ..models.verse import Verse
+from ..config.settings import Config
 
 from dotenv import load_dotenv
 load_dotenv()
 
 class BibleAgent:
     def __init__(self):
-        self.gpt = GPTService()
-        self.serper = SerperService()
+        self.gpt = GPTService(api_key=Config.OPENAI_API_KEY)
+        self.serper = SerperService(api_key=Config.SERPER_API_KEY)
         self.favorites = []
         
     def get_daily_verse(self) -> Verse:
