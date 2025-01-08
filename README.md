@@ -1,5 +1,3 @@
-# README.md
-
 # Scripture AI Agent
 
 ## Overview
