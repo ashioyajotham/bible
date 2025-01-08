@@ -5,7 +5,6 @@ load_dotenv()
 
 class Config:
     # API keys
-    GPT_API_KEY = os.getenv('GPT_API_KEY')
     SERPER_API_KEY = os.getenv('SERPER_API_KEY')
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     BIBLE_API_KEY = os.getenv('BIBLE_API_KEY')  # for bible-api.com

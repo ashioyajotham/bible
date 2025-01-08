@@ -1,7 +1,8 @@
 from typing import Dict, List
 import json
-from ..services.gpt_service import GPTService
-from ..services.serper_service import SerperService
+from datetime import datetime
+from src.services.gpt_service import GPTService
+from src.services.serper_service import SerperService
 from config.settings import SERPER_API_KEY
 
 class SearchAgent:

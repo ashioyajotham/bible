@@ -1,9 +1,12 @@
 import random
 import requests
 from datetime import datetime
-from ..services.gpt_service import GPTService
+from ..services.gpt_service import GPTService 
 from ..services.serper_service import SerperService
 from ..models.verse import Verse
+
+from dotenv import load_dotenv
+load_dotenv()
 
 class BibleAgent:
     def __init__(self):
