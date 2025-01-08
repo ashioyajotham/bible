@@ -2,3 +2,36 @@
 2025-01-08 18:30:26,399 - ERROR - Application error: name 'Config' is not defined
 2025-01-08 18:52:08,209 - ERROR - Error processing command verse: name 'BIBLE_API_BASE_URL' is not defined
 2025-01-08 18:54:19,822 - ERROR - Error processing command verse: Expecting value: line 1 column 1 (char 0)
+2025-01-08 19:08:16,982 - ERROR - API request failed: 404 Client Error: Not Found for url: https://bible-api.com/john/3:16
+2025-01-08 19:08:46,982 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-01-08 19:08:46,987 - INFO - Retrying request to /chat/completions in 0.479621 seconds
+2025-01-08 19:08:47,744 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-01-08 19:08:47,744 - INFO - Retrying request to /chat/completions in 0.783413 seconds
+2025-01-08 19:08:49,323 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-01-08 19:08:50,615 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-01-08 19:08:50,615 - INFO - Retrying request to /chat/completions in 0.448164 seconds
+2025-01-08 19:08:51,343 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-01-08 19:08:51,343 - INFO - Retrying request to /chat/completions in 0.971603 seconds
+2025-01-08 19:08:53,058 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-01-08 19:08:55,351 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-01-08 19:08:55,352 - INFO - Retrying request to /chat/completions in 0.495446 seconds
+2025-01-08 19:08:56,216 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-01-08 19:08:56,216 - INFO - Retrying request to /chat/completions in 0.880937 seconds
+2025-01-08 19:08:57,355 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-01-08 19:08:57,358 - ERROR - Error processing command teach: Error code: 429 - {'error': {'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.', 'type': 'insufficient_quota', 'param': None, 'code': 'insufficient_quota'}}
+2025-01-08 19:10:43,258 - ERROR - API request failed: 404 Client Error: Not Found for url: https://bible-api.com/psalm/23:1
+2025-01-08 19:11:12,827 - INFO - Retrying request to /chat/completions in 0.493437 seconds
+2025-01-08 19:11:17,747 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-01-08 19:11:17,748 - INFO - Retrying request to /chat/completions in 0.980396 seconds
+2025-01-08 19:11:19,202 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-01-08 19:11:20,495 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-01-08 19:11:20,495 - INFO - Retrying request to /chat/completions in 0.458121 seconds
+2025-01-08 19:11:21,268 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-01-08 19:11:21,268 - INFO - Retrying request to /chat/completions in 0.933519 seconds
+2025-01-08 19:11:22,804 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-01-08 19:11:26,360 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-01-08 19:11:26,362 - INFO - Retrying request to /chat/completions in 0.397447 seconds
+2025-01-08 19:11:27,203 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-01-08 19:11:27,203 - INFO - Retrying request to /chat/completions in 0.940215 seconds
+2025-01-08 19:11:29,995 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-01-08 19:11:29,995 - ERROR - Error processing command search: Error code: 429 - {'error': {'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.', 'type': 'insufficient_quota', 'param': None, 'code': 'insufficient_quota'}}

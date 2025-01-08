@@ -1,38 +1,59 @@
 import random
 import requests
+import json
+import logging
 from datetime import datetime
 from src.services.gpt_service import GPTService 
 from src.services.serper_service import SerperService
 from src.models.verse import Verse
 from src.config.settings import Config
+from src.services.llm.gemini_llm import GeminiLLM
+from src.services.llm.hf_llm import HuggingFaceLLM
 
 from dotenv import load_dotenv
 load_dotenv()
 
 class BibleAgent:
     def __init__(self):
-        self.gpt = GPTService(api_key=Config.OPENAI_API_KEY)
+        if Config.ACTIVE_LLM == 'gemini':
+            self.llm = GeminiLLM(api_key=Config.GEMINI_API_KEY)
+        else:
+            self.llm = HuggingFaceLLM(model_id=Config.HF_MODEL_ID)
         self.serper = SerperService(api_key=Config.SERPER_API_KEY)
         self.favorites = []
         
     def get_daily_verse(self) -> Verse:
-        """Fetch a daily verse randomly or based on date"""
-        common_verses = [
-            "john/3:16",
-            "philippians/4:13",
-            "jeremiah/29:11",
-            "romans/8:28",
-            "psalm/23:1"
-        ]
-        verse_ref = random.choice(common_verses)
-        response = requests.get(f"{Config.BIBLE_API_BASE_URL}/{verse_ref}")
-        data = response.json()
+        """Get verse based on date or season"""
+        today = datetime.now()
+        date_key = f"{today.month}-{today.day}"
         
-        return Verse(
-            reference=data['reference'],
-            text=data['text'],
-            translation=data.get('translation_name', 'KJV')
-        )
+        # Check for special date
+        if date_key in Config.DAILY_VERSES:
+            verse_ref, occasion = Config.DAILY_VERSES[date_key]
+        else:
+            # Get season verse as fallback
+            seasons = {
+                1: "winter", 2: "winter", 3: "spring",
+                4: "spring", 5: "spring", 6: "summer",
+                7: "summer", 8: "summer", 9: "autumn",
+                10: "autumn", 11: "autumn", 12: "winter"
+            }
+            current_season = seasons[today.month]
+            verse_ref = random.choice(Config.SEASONAL_VERSES[current_season])
+        
+        try:
+            response = requests.get(f"{Config.BIBLE_API_BASE_URL}/{verse_ref}")
+            response.raise_for_status()
+            data = response.json()
+            
+            return Verse(
+                reference=data.get('reference', verse_ref),
+                text=data.get('text', '').strip(),
+                translation=data.get('translation_name', 'KJV')
+            )
+        except Exception as e:
+            logging.error(f"Error fetching verse: {str(e)}")
+            return None
 
     def get_teachings(self, topic: str = None) -> list:
         """Get Jesus's teachings, optionally filtered by topic"""
@@ -52,7 +73,7 @@ class BibleAgent:
     def generate_reflection(self, verse: Verse) -> str:
         """Generate a reflection on a Bible verse using GPT-4"""
         prompt = f"Provide a deep spiritual reflection on this verse: {verse.text} ({verse.reference})"
-        return self.gpt.get_completion(prompt)
+        return self.llm.generate(prompt)
 
     def save_favorite(self, verse: Verse):
         """Save a verse to favorites"""
