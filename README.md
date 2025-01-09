@@ -123,6 +123,14 @@ exit
 ```
 
 ```
+# During development
+from src.agent.bible_agent import BibleAgent
+
+agent = BibleAgent()
+verse = agent.get_daily_verse()
+```
+
+```
 Arguments:
   --interactive, -i  Run the agent in interactive mode
   --verse, -v        Get the daily Bible verse
@@ -132,6 +140,7 @@ Arguments:
 Alternatively, you can use the agent in your Python code:
 
 ```python
+# After installing the package
 from bible import BibleAgent
 
 agent = BibleAgent()
