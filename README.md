@@ -29,7 +29,7 @@ graph TD
 ```
 
 ## Overview
-The Scripture AI Agent is a Python-based application designed to provide users with daily Bible verses, teachings of Jesus Christ, and insightful summaries from online sources. The agent leverages the capabilities of GPT-4 and the Serper API to enhance user experience and deliver relevant content.
+The Scripture AI Agent is a Python-based application designed to provide users with daily Bible verses, teachings of Jesus Christ, and insightful summaries from online sources. The agent leverages the capabilities of Foundation Models and the Serper API to enhance user experience and deliver relevant content.
 
 ## Features
 - **Daily Verses**: Fetches and displays daily Bible verses.
@@ -82,19 +82,45 @@ scripture-ai-agent/
    pip install -r requirements.txt
    ```
 
+4. Install the package in development mode:
+   ```
+   pip install -e .
+   ```
+5. Verify installation
+   ```
+   bible --version
+   ```
+
+
 ## Usage
 To run the application, execute the following command:
 ```
 python src/main.py
 
 # Interactive Mode
-python src/main.py --interactive
+bible --interactive
 
 # Get Daily Verse
-python src/main.py --verse
+bible --verse
 
 # Search Biblical Insights
-python src/main.py --search "faith"
+bible --search "faith and works"
+
+# Get teaching on a topic
+bible --teaching "love your enemies"
+
+# Get insights on a topic
+bible --insights "christian living"
+
+# Export study insights to a file
+bible --export study.md
+
+# Get the agent version
+bible --version
+
+# Exit the interactive mode
+exit
+```
 
 Arguments:
   --interactive, -i  Run the agent in interactive mode
@@ -117,6 +143,25 @@ insights = agent.search_biblical_insights("faith and works")
 
 # Interactive mode
 agent.start_interactive_session()
+```
+
+## Advanced Usage Examples
+```
+# Create a weekly study plan
+agent = BibleAgent()
+topics = ["faith", "hope", "love"]
+for topic in topics:
+    insights = agent.search_biblical_insights(topic)
+    verses = agent.get_related_verses(topic)
+    print(f"\n{topic.upper()} STUDY")
+    print("Insights:", insights)
+    print("Key Verses:", verses)
+
+# Export study results
+with open("study_results.md", "w") as f:
+    f.write(f"# Bible Study Results\n\n")
+    f.write(f"## Daily Verse\n{agent.get_daily_verse()}\n\n")
+    f.write(f"## Reflections\n{agent.generate_reflection(verse)}")
 ```
 
 ## Configuration
