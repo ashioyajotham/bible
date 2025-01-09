@@ -122,11 +122,14 @@ bible --version
 exit
 ```
 
+```
 Arguments:
   --interactive, -i  Run the agent in interactive mode
   --verse, -v        Get the daily Bible verse
   --search, -s       Search for biblical insights
 ```
+
+
 Alternatively, you can use the agent in your Python code:
 
 ```python
