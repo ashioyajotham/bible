@@ -26,6 +26,7 @@ graph TD
     C --> G[Tool Selection]
     G --> H[LLM Models]
     G --> I[Search Tools]
+```
 
 ## Overview
 The Scripture AI Agent is a Python-based application designed to provide users with daily Bible verses, teachings of Jesus Christ, and insightful summaries from online sources. The agent leverages the capabilities of GPT-4 and the Serper API to enhance user experience and deliver relevant content.
@@ -34,7 +35,7 @@ The Scripture AI Agent is a Python-based application designed to provide users w
 - **Daily Verses**: Fetches and displays daily Bible verses.
 - **Teachings of Jesus**: Provides insights into the teachings of Jesus Christ.
 - **Online Insights**: Searches for additional insights and summaries from the web.
-- **GPT-4 Integration**: Utilizes GPT-4 for generating responses and enhancing user interaction.
+- **Llama 3 and Gemini Integration**: Utilizes LLMs for generating responses and enhancing user interaction.
 
 ## Project Structure
 ```
