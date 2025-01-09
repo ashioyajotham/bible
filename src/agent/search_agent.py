@@ -1,48 +1,37 @@
 from typing import Dict, List
-import json
 from datetime import datetime
-from src.services.gpt_service import GPTService
-from src.services.serper_service import SerperService
-from src.config.settings import Config
+from services.serper_service import SerperService
+from config.settings import Config
+from services.llm.gemini_llm import GeminiLLM
+from services.llm.hf_llm import HuggingFaceLLM
+from services.llm.model_selector import ModelSelector, ModelType, TaskType
 
 class SearchAgent:
     def __init__(self):
-        self.gpt = GPTService(api_key=Config.OPENAI_API_KEY)
+        self.model_selector = ModelSelector()
+        self.models = {
+            ModelType.GEMINI: GeminiLLM(api_key=Config.GEMINI_API_KEY),
+            ModelType.LLAMA: HuggingFaceLLM(model_id=Config.HF_MODEL_ID)
+        }
         self.serper = SerperService(api_key=Config.SERPER_API_KEY)
         self.cache = {}
-        
+
     def search_insights(self, query: str) -> Dict:
-        """
-        Search for biblical insights using serper.dev and GPT
-        """
-        # Check cache first
-        if query in self.cache:
-            return self.cache[query]
-            
-        # Search religious and scholarly sources
-        search_results = self.serper.search(
-            query=f"bible {query} meaning interpretation",
-            num_results=5
+        validated_results = self._validate_sources(
+            self.serper.search(f"bible {query} meaning interpretation")
         )
         
-        # Filter and validate sources
-        validated_results = self._validate_sources(search_results)
-        
-        # Generate insights using GPT
         combined_content = "\n".join([r["snippet"] for r in validated_results])
-        insights = self.gpt.get_completion(
+        selected_model = self.model_selector.select_model(TaskType.ANALYSIS)
+        insights = self.models[selected_model].generate(
             f"Based on these sources, provide biblical insights about {query}:\n{combined_content}"
         )
         
-        result = {
+        return {
             "insights": insights,
-            "sources": validated_results,
+            "sources": validated_results[:3],
             "timestamp": datetime.now().isoformat()
         }
-        
-        # Cache the results
-        self.cache[query] = result
-        return result
 
     def get_summary(self, text: str) -> Dict:
         """
@@ -57,6 +46,11 @@ class SearchAgent:
             "key_points": self._extract_key_points(summary),
             "references": self._find_biblical_references(text)
         }
+
+    def get_ai_insights(self, prompt: str) -> str:
+        """Get insights using current LLM model"""
+        selected_model = self.model_selector.select_model(TaskType.ANALYSIS)
+        return self.models[selected_model].generate(prompt)
 
     def _validate_sources(self, results: List[Dict]) -> List[Dict]:
         """
@@ -82,10 +76,9 @@ class SearchAgent:
         return points.split("\n")
 
     def _find_biblical_references(self, text: str) -> List[str]:
-        """
-        Find and validate biblical references in text
-        """
-        refs = self.gpt.get_completion(
+        """Find and validate biblical references in text"""
+        selected_model = self.model_selector.select_model(TaskType.ANALYSIS)
+        refs = self.models[selected_model].generate(
             f"Extract all biblical references from this text:\n{text}"
         )
         return [ref.strip() for ref in refs.split("\n") if ref.strip()]

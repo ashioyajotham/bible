@@ -4,7 +4,7 @@ from huggingface_hub import login, HfFolder
 from .base_llm import BaseLLM
 import os
 import logging
-from ...config.settings import Config
+from config.settings import Config
 
 class HuggingFaceLLM(BaseLLM):
     def __init__(self, model_id: str = "meta-llama/Llama-3.1-70B-Instruct"):

@@ -1,5 +1,32 @@
 # Scripture AI Agent
 
+An autonomous AI agent for biblical study and research, powered by multiple LLMs and equipped with self-learning capabilities.
+
+## Agent Architecture
+
+This system implements a true autonomous agent with:
+
+- **Self-Directed Goals**: Dynamically adjusts objectives based on context
+- **Memory Systems**: Short-term and long-term memory for learning
+- **Planning Module**: Strategic action planning with fallback mechanisms
+- **Learning Component**: Adapts strategies based on experience
+- **Tool Integration**: Dynamic selection of LLMs and search capabilities
+- **State Management**: Tracks agent state and confidence levels
+- **Reflection System**: Continuous self-evaluation and improvement
+
+### Core Components
+
+```mermaid
+graph TD
+    A[User Input] --> B[Agent Core]
+    B --> C[Goal System]
+    B --> D[Memory System]
+    B --> E[Planning Module]
+    B --> F[Learning System]
+    C --> G[Tool Selection]
+    G --> H[LLM Models]
+    G --> I[Search Tools]
+
 ## Overview
 The Scripture AI Agent is a Python-based application designed to provide users with daily Bible verses, teachings of Jesus Christ, and insightful summaries from online sources. The agent leverages the capabilities of GPT-4 and the Serper API to enhance user experience and deliver relevant content.
 
@@ -47,7 +74,7 @@ scripture-ai-agent/
    ```
 2. Navigate to the project directory:
    ```
-   cd scripture-ai-agent
+   cd bible
    ```
 3. Install the required dependencies:
    ```
@@ -67,6 +94,28 @@ python src/main.py --verse
 
 # Search Biblical Insights
 python src/main.py --search "faith"
+
+Arguments:
+  --interactive, -i  Run the agent in interactive mode
+  --verse, -v        Get the daily Bible verse
+  --search, -s       Search for biblical insights
+```
+Alternatively, you can use the agent in your Python code:
+
+```python
+from bible import BibleAgent
+
+agent = BibleAgent()
+
+# Get daily verse with reflection
+verse = agent.get_daily_verse()
+reflection = agent.generate_reflection(verse)
+
+# Search biblical insights
+insights = agent.search_biblical_insights("faith and works")
+
+# Interactive mode
+agent.start_interactive_session()
 ```
 
 ## Configuration

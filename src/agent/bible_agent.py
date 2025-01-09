@@ -3,20 +3,23 @@ import requests
 import json
 import logging
 from datetime import datetime
-from src.services.gpt_service import GPTService 
-from src.services.serper_service import SerperService
-from src.models.verse import Verse
-from src.config.settings import Config
-from src.services.llm.gemini_llm import GeminiLLM
-from src.services.llm.hf_llm import HuggingFaceLLM
-from src.services.llm.model_selector import ModelSelector, ModelType, TaskType
+from services.serper_service import SerperService
+from models.verse import Verse
+from config.settings import Config
+from services.llm.gemini_llm import GeminiLLM
+from services.llm.hf_llm import HuggingFaceLLM
+from services.llm.model_selector import ModelSelector, ModelType, TaskType
 from typing import Dict, List, Optional
 
 from dotenv import load_dotenv
 load_dotenv()
 
-class BibleAgent:
+from .base_agent import BaseAgent
+from .components.goal_system import Goal, GoalPriority
+
+class BibleAgent(BaseAgent):
     def __init__(self):
+        super().__init__()
         self.model_selector = ModelSelector()
         self.models = {
             ModelType.GEMINI: GeminiLLM(api_key=Config.GEMINI_API_KEY),
@@ -31,6 +34,12 @@ class BibleAgent:
         self.memory = []
         self.favorites = []
         self.context = {}
+        self.goals = {
+            "primary": "Provide biblical insights and understanding",
+            "secondary": ["Learn from interactions", "Improve responses", "Build context"]
+        }
+        self.performance_metrics = {}
+        self.learning_history = []
         
         # Agent Tools
         self.tools = {
@@ -40,7 +49,15 @@ class BibleAgent:
             'teach': self.get_teachings,
             'analyze': self.analyze_passage
         }
+        self._initialize_goals()
         
+    def _initialize_goals(self):
+        self.goal_system.add_goal(Goal(
+            description="Provide biblical insights",
+            priority=GoalPriority.HIGH,
+            success_criteria=["Relevant verse found", "Insight generated"]
+        ))
+
     def get_daily_verse(self) -> Verse:
         """Get verse based on date or season"""
         today = datetime.now()
@@ -74,18 +91,19 @@ class BibleAgent:
             logging.error(f"Error fetching verse: {str(e)}")
             return None
 
-    def get_teachings(self, topic: str = None) -> list:
+    def get_teachings(self, topic: str = None) -> dict:
         """Get Jesus's teachings, optionally filtered by topic"""
         prompt = f"What did Jesus teach about {topic}" if topic else "Share an important teaching of Jesus"
         
-        # Get GPT-4 insights
-        gpt_insight = self.gpt.get_completion(prompt)
+        # Get AI insights using selected model
+        selected_model = self.model_selector.select_model(TaskType.TEACHING)
+        ai_insight = self.models[selected_model].generate(prompt)
         
         # Get online resources via serper
         search_results = self.serper.search(f"Jesus teachings {topic}" if topic else "Jesus main teachings")
         
         return {
-            "ai_insight": gpt_insight,
+            "ai_insight": ai_insight,
             "references": search_results[:3]
         }
 
@@ -137,16 +155,18 @@ class BibleAgent:
         return self.get_llm_response(prompt, task_type='related_verses').split('\n')
 
     def plan_action(self, user_input: str) -> Dict:
-        """Strategic planning for agent actions"""
-        prompt = f"Determine best action for: {user_input}"
-        plan = self.get_llm_response(prompt, task_type='planning')
+        """Strategic planning with goals and context"""
+        context = self._get_context()
+        relevant_history = self._get_relevant_history(user_input)
         
-        return {
-            'input': user_input,
-            'plan': plan,
-            'tool': self._select_tool(plan),
-            'context': self._get_context()
+        plan = {
+            "goals": self._identify_relevant_goals(user_input),
+            "tools": self._select_tools(user_input, context),
+            "steps": self._create_action_steps(user_input),
+            "fallback": self._create_fallback_plan()
         }
+        
+        return self._execute_plan(plan)
 
     def execute_action(self, plan: Dict) -> Dict:
         """Execute planned action using appropriate tool"""
@@ -223,3 +243,12 @@ class BibleAgent:
                 except:
                     continue
         return "Sorry, all models are currently unavailable."
+
+    def learn_from_interaction(self, interaction: Dict):
+        """Agent learning from experiences"""
+        self.learning_history.append({
+            "interaction": interaction,
+            "outcome": interaction.get("success", False),
+            "improvements": self._identify_improvements(interaction)
+        })
+        self._update_strategies(self.learning_history[-1])
