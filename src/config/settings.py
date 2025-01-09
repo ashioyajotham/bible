@@ -11,8 +11,9 @@ class Config:
     BIBLE_API_BASE_URL = "https://bible-api.com"
     SERPER_API_BASE_URL = "https://google.serper.dev/search"
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-    HF_MODEL_ID = os.getenv('HF_MODEL_ID', 'meta-llama/Llama-2-7b-chat-hf')
+    HF_MODEL_ID = os.getenv('HF_MODEL_ID', 'meta-llama/Llama-3.1-70B-Instruct')
     ACTIVE_LLM = os.getenv('ACTIVE_LLM', 'gemini')  # gemini, llama
+    HF_TOKEN = os.getenv('HF_TOKEN')
     
     # Daily verses for each month and day
     DAILY_VERSES = {

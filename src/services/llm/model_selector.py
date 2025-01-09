@@ -4,7 +4,7 @@ from datetime import datetime
 
 class ModelType(Enum):
     GEMINI = "gemini"
-    LLAMA = "llama"
+    LLAMA = "meta-llama/Llama-3.1-70B-Instruct"  # Update this
 
 class TaskType(Enum):
     REFLECTION = "reflection"

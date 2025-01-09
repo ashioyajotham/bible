@@ -20,7 +20,7 @@ class BibleAgent:
         self.model_selector = ModelSelector()
         self.models = {
             ModelType.GEMINI: GeminiLLM(api_key=Config.GEMINI_API_KEY),
-            ModelType.LLAMA: HuggingFaceLLM(model_id=Config.HF_MODEL_ID)
+            ModelType.LLAMA: HuggingFaceLLM(model_id=Config.HF_MODEL_ID)  # Ensure this uses updated Config
         }
         
         self.current_model = self.models[ModelType.GEMINI]  # Default model
@@ -119,7 +119,10 @@ class BibleAgent:
 
     def search_biblical_insights(self, query: str) -> dict:
         """Search for biblical insights using both GPT and online sources"""
-        gpt_analysis = self.get_llm_response(f"Provide biblical insight on: {query}", task_type='search')
+        gpt_analysis = self.get_llm_response(
+            f"Provide biblical insight on: {query}", 
+            task_type=TaskType.SEARCH
+        )
         online_results = self.serper.search(f"biblical meaning {query}")
         
         return {
