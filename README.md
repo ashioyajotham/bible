@@ -129,7 +129,6 @@ Arguments:
   --search, -s       Search for biblical insights
 ```
 
-
 Alternatively, you can use the agent in your Python code:
 
 ```python
@@ -149,7 +148,7 @@ agent.start_interactive_session()
 ```
 
 ## Advanced Usage Examples
-```
+```python
 # Create a weekly study plan
 agent = BibleAgent()
 topics = ["faith", "hope", "love"]
