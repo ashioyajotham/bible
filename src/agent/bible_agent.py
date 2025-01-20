@@ -11,13 +11,15 @@ from config.settings import Config
 from services.llm.gemini_llm import GeminiLLM
 from services.llm.hf_llm import HuggingFaceLLM
 from services.llm.model_selector import ModelSelector, ModelType, TaskType
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 from dotenv import load_dotenv
 load_dotenv()
 
 from .base_agent import BaseAgent
 from .components.goal_system import Goal, GoalPriority
+from utils.formatters.markdown_formatter import MarkdownFormatter
+from utils.formatters.console_formatter import ConsoleFormatter
 
 class BibleAgent(BaseAgent):
     def __init__(self):
@@ -56,6 +58,9 @@ class BibleAgent(BaseAgent):
             'analyze': self.analyze_passage
         }
         
+        self.markdown_formatter = MarkdownFormatter()
+        self.console_formatter = ConsoleFormatter()
+
     def _initialize_goals(self):
         """Initialize agent goals"""
         self.goal_system.add_goal(Goal(
@@ -92,7 +97,38 @@ class BibleAgent(BaseAgent):
     def current_model(self):
         return self.get_model(self.current_model_type)
 
-    def get_daily_verse(self) -> Optional[Verse]:
+    def get_daily_verse(self) -> Optional[str]:
+        """Get verse based on date or random selection with formatted output"""
+        try:
+            verses = self.daily_verses["default"]
+            verse_ref = random.choice(verses)
+            response = requests.get(f"https://bible-api.com/{verse_ref}")
+            response.raise_for_status()
+            
+            data = response.json()
+            verse = Verse(
+                text=data['text'].strip(),
+                reference=data['reference'],
+                translation=data.get('translation_name', 'ESV')
+            )
+            
+            # Return only the formatted version
+            return self.console_formatter.format_verse({
+                'text': verse.text,
+                'reference': verse.reference,
+                'translation': verse.translation
+            })
+        except Exception as e:
+            logging.error(f"Error fetching verse: {str(e)}")
+            # Return formatted fallback verse
+            fallback = self._get_fallback_verse()
+            return self.console_formatter.format_verse({
+                'text': fallback.text,
+                'reference': fallback.reference,
+                'translation': fallback.translation
+            })
+
+    def _fetch_daily_verse(self) -> Optional[Verse]:
         """Get verse based on date or random selection"""
         try:
             verses = self.daily_verses["default"]
@@ -199,11 +235,18 @@ class BibleAgent(BaseAgent):
         """Save a verse to favorites"""
         self.favorites.append(verse)
 
-    def export_to_markdown(self, content, filename: str):
-        """Export content to markdown file"""
-        with open(f"{filename}.md", "w") as f:
-            f.write(f"# Scripture Study - {datetime.now().strftime('%Y-%m-%d')}\n\n")
-            f.write(content)
+    def export_to_markdown(self, content: Dict[str, Any], filename: str):
+        """Export content to markdown file with rich formatting"""
+        with open(f"{filename}.md", "w", encoding='utf-8') as f:
+            f.write("# 📚 Scripture Study Report\n\n")
+            f.write(f"*Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n\n")
+            
+            if 'verse' in content:
+                f.write(self.markdown_formatter.format_verse(content['verse']))
+            if 'teaching' in content:
+                f.write(self.markdown_formatter.format_teaching(content['teaching']))
+            if 'search_results' in content:
+                f.write(self.markdown_formatter.format_search_results(content['search_results']))
 
     def search_biblical_insights(self, query: str) -> dict:
         """Search for biblical insights using both LLM and online sources"""
@@ -353,3 +396,36 @@ class BibleAgent(BaseAgent):
         except Exception as e:
             logging.error(f"Failed to analyze passage: {str(e)}")
             raise
+
+def handle_interactive_mode(agent: BibleAgent):
+    """Handle interactive mode with command processing"""
+    print("\nBible Study AI Agent - Interactive Mode")
+    print("Commands: verse, teach, search, export, quit")
+    
+    while True:
+        try:
+            command = input("\nEnter command: ").strip().lower()
+            
+            if command == 'quit':
+                break
+            elif command == 'verse':
+                formatted_verse = agent.get_daily_verse()
+                print(formatted_verse)
+            elif command == 'teach':
+                topic = input("Enter topic: ")
+                teachings = agent.get_teachings(topic)
+                print(agent.console_formatter.format_teaching(teachings))
+            elif command == 'search':
+                query = input("Enter search query: ")
+                results = agent.search_biblical_insights(query)
+                print(agent.console_formatter.format_search_results(results))
+            elif command == 'export':
+                filename = input("Enter filename (without extension): ")
+                agent.export_to_markdown({"verse": agent.get_daily_verse()}, filename)
+                print(f"Exported to {filename}.md")
+            else:
+                print("Unknown command. Available commands: verse, teach, search, export, quit")
+                
+        except Exception as e:
+            logging.error(f"Error processing command {command}: {str(e)}")
+            print(f"Error: {str(e)}")
