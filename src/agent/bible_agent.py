@@ -1,7 +1,9 @@
 import random
+import time
 import requests
 import json
 import logging
+import urllib.parse
 from datetime import datetime
 from services.serper_service import SerperService
 from models.verse import Verse
@@ -21,9 +23,12 @@ class BibleAgent(BaseAgent):
     def __init__(self):
         logging.debug("Initializing BibleAgent")
         try:
+            super().__init__()  # Initialize BaseAgent first
             self.model_selector = ModelSelector()
             self._models = {}
             self.current_model_type = ModelType.GEMINI
+            self._initialize_goals()
+            self._initialize_daily_verses()
             logging.debug("BibleAgent initialized successfully")
         except Exception as e:
             logging.error(f"Failed to initialize BibleAgent: {str(e)}")
@@ -50,17 +55,33 @@ class BibleAgent(BaseAgent):
             'teach': self.get_teachings,
             'analyze': self.analyze_passage
         }
-        self._initialize_goals()
         
     def _initialize_goals(self):
+        """Initialize agent goals"""
         self.goal_system.add_goal(Goal(
-            description="Provide biblical insights",
+            description="Provide biblical insights and understanding",
             priority=GoalPriority.HIGH,
             success_criteria=["Relevant verse found", "Insight generated"]
         ))
+        self.goal_system.add_goal(Goal(
+            description="Learn from interactions",
+            priority=GoalPriority.MEDIUM,
+            success_criteria=["Pattern identified", "Knowledge stored"]
+        ))
+
+    def _initialize_daily_verses(self):
+        """Initialize default daily verses"""
+        self.daily_verses = {
+            "default": [
+                "john/3:16",
+                "philippians/4:13",
+                "psalm/23:1",
+                "proverbs/3:5-6"
+            ]
+        }
 
     def get_model(self, model_type: ModelType):
-        if model_type not in self._models:
+        if (model_type not in self._models):
             if model_type == ModelType.GEMINI:
                 self._models[model_type] = GeminiLLM(api_key=Config.GEMINI_API_KEY)
             elif model_type == ModelType.LLAMA:
@@ -71,54 +92,90 @@ class BibleAgent(BaseAgent):
     def current_model(self):
         return self.get_model(self.current_model_type)
 
-    def get_daily_verse(self) -> Verse:
-        """Get verse based on date or season"""
-        today = datetime.now()
-        date_key = f"{today.month}-{today.day}"
-        
-        # Check for special date
-        if date_key in Config.DAILY_VERSES:
-            verse_ref, occasion = Config.DAILY_VERSES[date_key]
-        else:
-            # Get season verse as fallback
-            seasons = {
-                1: "winter", 2: "winter", 3: "spring",
-                4: "spring", 5: "spring", 6: "summer",
-                7: "summer", 8: "summer", 9: "autumn",
-                10: "autumn", 11: "autumn", 12: "winter"
-            }
-            current_season = seasons[today.month]
-            verse_ref = random.choice(Config.SEASONAL_VERSES[current_season])
-        
+    def get_daily_verse(self) -> Optional[Verse]:
+        """Get verse based on date or random selection"""
         try:
-            response = requests.get(f"{Config.BIBLE_API_BASE_URL}/{verse_ref}")
+            verses = self.daily_verses["default"]
+            verse_ref = random.choice(verses)
+            
+            # URL encode the verse reference
+            encoded_ref = urllib.parse.quote(verse_ref)
+            url = f"https://bible-api.com/{encoded_ref}"
+            
+            logging.debug(f"Fetching verse from: {url}")
+            response = requests.get(url)
+            
+            if response.status_code == 404:
+                # Try alternate format (e.g., 'psalms' instead of 'psalm')
+                alternate_ref = self._get_alternate_reference(verse_ref)
+                url = f"https://bible-api.com/{urllib.parse.quote(alternate_ref)}"
+                logging.debug(f"Retrying with alternate reference: {url}")
+                response = requests.get(url)
+            
             response.raise_for_status()
             data = response.json()
             
             return Verse(
-                reference=data.get('reference', verse_ref),
-                text=data.get('text', '').strip(),
+                text=data['text'].strip(),
+                reference=data['reference'],
                 translation=data.get('translation_name', 'KJV')
             )
+            
         except Exception as e:
             logging.error(f"Error fetching verse: {str(e)}")
-            return None
+            return self._get_fallback_verse()
+
+    def _get_alternate_reference(self, verse_ref: str) -> str:
+        """Get alternate format for verse reference"""
+        mapping = {
+            'psalm/': 'psalms/',
+            'proverbs/': 'proverb/',
+            'song/': 'songofsolomon/'
+        }
+        for old, new in mapping.items():
+            if old in verse_ref:
+                return verse_ref.replace(old, new)
+        return verse_ref
+
+    def _get_fallback_verse(self) -> Verse:
+        """Return a hardcoded verse when API fails"""
+        return Verse(
+            text="For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life.",
+            reference="John 3:16",
+            translation="ESV"
+        )
 
     def get_teachings(self, topic: str = None) -> dict:
-        """Get Jesus's teachings, optionally filtered by topic"""
-        prompt = f"What did Jesus teach about {topic}" if topic else "Share an important teaching of Jesus"
-        
-        # Get AI insights using selected model
-        selected_model = self.model_selector.select_model(TaskType.TEACHING)
-        ai_insight = self.models[selected_model].generate(prompt)
-        
-        # Get online resources via serper
-        search_results = self.serper.search(f"Jesus teachings {topic}" if topic else "Jesus main teachings")
-        
-        return {
-            "ai_insight": ai_insight,
-            "references": search_results[:3]
-        }
+        start_time = time.time()
+        try:
+            context = {
+                'topic': topic,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            selected_model = self.model_selector.select_model(
+                task=TaskType.TEACHING,
+                context=context
+            )
+            
+            result = self.get_model(selected_model).generate(
+                f"What did Jesus teach about {topic}"
+            )
+            
+            # Update model performance
+            success = bool(result and len(result) > 0)
+            latency = time.time() - start_time
+            self.model_selector.update_performance(selected_model, success, latency)
+            
+            return {
+                "teaching": result,
+                "topic": topic,
+                "model_used": selected_model.value,
+                "timestamp": datetime.now().isoformat()
+            }
+        except Exception as e:
+            logging.error(f"Error in get_teachings: {str(e)}")
+            raise
 
     def generate_reflection(self, verse: Verse) -> str:
         """Generate reflection using best-suited model"""
@@ -149,17 +206,26 @@ class BibleAgent(BaseAgent):
             f.write(content)
 
     def search_biblical_insights(self, query: str) -> dict:
-        """Search for biblical insights using both GPT and online sources"""
-        gpt_analysis = self.get_llm_response(
-            f"Provide biblical insight on: {query}", 
-            task_type=TaskType.SEARCH
+        """Search for biblical insights using both LLM and online sources"""
+        context = {
+            'query': query,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        selected_model = self.model_selector.select_model(
+            task=TaskType.SEARCH,
+            context=context
+        )
+        
+        ai_analysis = self.get_model(selected_model).generate(
+            f"Provide biblical insight on: {query}"
         )
         online_results = self.serper.search(f"biblical meaning {query}")
         
         return {
-            "ai_analysis": gpt_analysis,
+            "ai_analysis": ai_analysis,
             "online_sources": online_results[:3],
-            "related_verses": self.get_related_verses(query)
+            "timestamp": datetime.now().isoformat()
         }
 
     def get_related_verses(self, topic: str) -> list:
