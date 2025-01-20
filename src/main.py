@@ -6,13 +6,18 @@ from agent.bible_agent import BibleAgent
 from utils.helpers import setup_logging, create_export_filename
 
 def main():
-    setup_logging()
     parser = argparse.ArgumentParser(description="Bible Study AI Agent")
     parser.add_argument('--interactive', action='store_true', help='Start interactive mode')
     parser.add_argument('--verse', action='store_true', help='Get daily verse')
+    parser.add_argument('--debug', action='store_true', help='Enable debug logging')
     args = parser.parse_args()
+
+    # Setup logging based on debug flag
+    log_level = logging.DEBUG if args.debug else logging.INFO
+    setup_logging(level=log_level)
     
     try:
+        logging.debug("Initializing Bible Agent")
         agent = BibleAgent()
         if args.interactive:
             handle_interactive_mode(agent)

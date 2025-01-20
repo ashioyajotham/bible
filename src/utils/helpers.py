@@ -8,12 +8,11 @@ def format_verse(text: str, reference: str) -> str:
     """Format a Bible verse with its reference."""
     return f"{text} - {reference}"
 
-def setup_logging(log_file: str = "scripture_ai.log"):
+def setup_logging(level=logging.INFO):
     """Setup logging configuration"""
     logging.basicConfig(
-        filename=log_file,
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s'
+        level=level,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
 
 def validate_verse_reference(reference: str) -> bool:

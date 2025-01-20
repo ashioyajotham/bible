@@ -19,14 +19,15 @@ from .components.goal_system import Goal, GoalPriority
 
 class BibleAgent(BaseAgent):
     def __init__(self):
-        super().__init__()
-        self.model_selector = ModelSelector()
-        self.models = {
-            ModelType.GEMINI: GeminiLLM(api_key=Config.GEMINI_API_KEY),
-            ModelType.LLAMA: HuggingFaceLLM(model_id=Config.HF_MODEL_ID)  # Ensure this uses updated Config
-        }
-        
-        self.current_model = self.models[ModelType.GEMINI]  # Default model
+        logging.debug("Initializing BibleAgent")
+        try:
+            self.model_selector = ModelSelector()
+            self._models = {}
+            self.current_model_type = ModelType.GEMINI
+            logging.debug("BibleAgent initialized successfully")
+        except Exception as e:
+            logging.error(f"Failed to initialize BibleAgent: {str(e)}")
+            raise
 
         self.serper = SerperService(api_key=Config.SERPER_API_KEY)
         
@@ -57,6 +58,18 @@ class BibleAgent(BaseAgent):
             priority=GoalPriority.HIGH,
             success_criteria=["Relevant verse found", "Insight generated"]
         ))
+
+    def get_model(self, model_type: ModelType):
+        if model_type not in self._models:
+            if model_type == ModelType.GEMINI:
+                self._models[model_type] = GeminiLLM(api_key=Config.GEMINI_API_KEY)
+            elif model_type == ModelType.LLAMA:
+                self._models[model_type] = HuggingFaceLLM(model_id=Config.HF_MODEL_ID)
+        return self._models[model_type]
+
+    @property
+    def current_model(self):
+        return self.get_model(self.current_model_type)
 
     def get_daily_verse(self) -> Verse:
         """Get verse based on date or season"""
@@ -252,3 +265,25 @@ class BibleAgent(BaseAgent):
             "improvements": self._identify_improvements(interaction)
         })
         self._update_strategies(self.learning_history[-1])
+
+    def analyze_passage(self, passage: str) -> Dict:
+        """Analyze a biblical passage for deeper understanding"""
+        try:
+            context = self._get_context()
+            selected_model = self.model_selector.select_model(TaskType.ANALYSIS)
+            
+            prompt = f"Analyze this biblical passage deeply:\n{passage}\n\nProvide:\n1. Context\n2. Key themes\n3. Interpretations\n4. Applications"
+            analysis = self.get_model(selected_model).generate(prompt)
+            
+            # Get related verses
+            related_verses = self.get_related_verses(passage)
+            
+            return {
+                "analysis": analysis,
+                "related_verses": related_verses,
+                "context": context,
+                "timestamp": datetime.now().isoformat()
+            }
+        except Exception as e:
+            logging.error(f"Failed to analyze passage: {str(e)}")
+            raise
