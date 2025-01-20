@@ -253,26 +253,42 @@ class BibleAgent(BaseAgent):
 
     def search_biblical_insights(self, query: str) -> dict:
         """Search for biblical insights using both LLM and online sources"""
-        context = {
-            'query': query,
-            'timestamp': datetime.now().isoformat()
-        }
-        
-        selected_model = self.model_selector.select_model(
-            task=TaskType.SEARCH,
-            context=context
-        )
-        
-        ai_analysis = self.get_model(selected_model).generate(
-            f"Provide biblical insight on: {query}"
-        )
-        online_results = self.serper.search(f"biblical meaning {query}")
-        
-        return {
-            "ai_analysis": ai_analysis,
-            "online_sources": online_results[:3],
-            "timestamp": datetime.now().isoformat()
-        }
+        try:
+            context = {
+                'query': query,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            selected_model = self.model_selector.select_model(
+                task=TaskType.SEARCH,
+                context=context
+            )
+            
+            # Get AI analysis
+            ai_analysis = self.get_model(selected_model).generate(
+                f"Provide a comprehensive biblical analysis of: {query}\n" +
+                "Include scriptural references and theological insights."
+            )
+            
+            # Get online sources
+            online_results = self.serper.search(f"biblical meaning {query}")
+            
+            search_data = {
+                "query": query,
+                "ai_analysis": ai_analysis,
+                "online_sources": online_results[:3],
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            # Only print formatted output
+            print(self.console_formatter.format_search_results(search_data))
+            
+            # Return silently for internal use
+            return search_data
+            
+        except Exception as e:
+            logging.error(f"Error in search_biblical_insights: {str(e)}")
+            raise
 
     def get_related_verses(self, topic: str) -> list:
         """Get related Bible verses for a topic"""

@@ -23,3 +23,21 @@ class ConsoleFormatter:
                 formatted_sections.append(section)
 
         return f"{Fore.GREEN}🎯 Biblical Teaching: {teaching['topic']}{Style.RESET_ALL}\n\n{Fore.WHITE}{chr(10).join(formatted_sections)}{Style.RESET_ALL}\n\n{Fore.BLUE}Generated using {teaching['model_used']} at {teaching['timestamp']}{Style.RESET_ALL}"
+
+    def format_search_results(self, results: Dict[str, Any]) -> str:
+        online_sources = "\n".join([
+            f"{Fore.YELLOW}• {source['title']}{Style.RESET_ALL}\n  {Fore.BLUE}{source['link']}{Style.RESET_ALL}"
+            for source in results['online_sources']
+        ])
+
+        return f"""
+{Fore.CYAN}🔍 Biblical Search: "{results['query']}"{Style.RESET_ALL}
+
+{Fore.GREEN}AI Analysis:{Style.RESET_ALL}
+{results['ai_analysis']}
+
+{Fore.GREEN}Related Sources:{Style.RESET_ALL}
+{online_sources}
+
+{Fore.BLUE}Generated at {results['timestamp']}{Style.RESET_ALL}
+"""

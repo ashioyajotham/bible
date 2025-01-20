@@ -1,186 +1,159 @@
-# Scripture AI Agent
+# Bible Study AI Agent 🤖📚
 
-An autonomous AI agent for biblical study and research, powered by multiple LLMs and equipped with self-learning capabilities.
+An intelligent agent system for biblical study and analysis, combining modern AI with scriptural wisdom.
 
-## Agent Architecture
-
-This system implements a true autonomous agent with:
-
-- **Self-Directed Goals**: Dynamically adjusts objectives based on context
-- **Memory Systems**: Short-term and long-term memory for learning
-- **Planning Module**: Strategic action planning with fallback mechanisms
-- **Learning Component**: Adapts strategies based on experience
-- **Tool Integration**: Dynamic selection of LLMs and search capabilities
-- **State Management**: Tracks agent state and confidence levels
-- **Reflection System**: Continuous self-evaluation and improvement
-
-### Core Components
+## Architecture
 
 ```mermaid
 graph TD
-    A[User Input] --> B[Agent Core]
-    B --> C[Goal System]
-    B --> D[Memory System]
-    B --> E[Planning Module]
-    B --> F[Learning System]
-    C --> G[Tool Selection]
-    G --> H[LLM Models]
-    G --> I[Search Tools]
+    A[Bible Agent] --> B[Model Selector]
+    A --> C[Goal System]
+    A --> D[Tools]
+    A --> E[Formatters]
+    
+    B --> F[Gemini LLM]
+    B --> G[HuggingFace LLM]
+    
+    D --> H[Search]
+    D --> I[Reflect]
+    D --> J[Verse]
+    D --> K[Teach]
+    D --> L[Analyze]
+    
+    E --> M[Markdown Formatter]
+    E --> N[Console Formatter]
+    
+    C --> O[Goals]
+    O --> P[Primary Goals]
+    O --> Q[Secondary Goals]
 ```
-
-## Overview
-The Scripture AI Agent is a Python-based application designed to provide users with daily Bible verses, teachings of Jesus Christ, and insightful summaries from online sources. The agent leverages the capabilities of Foundation Models and the Serper API to enhance user experience and deliver relevant content.
 
 ## Features
-- **Daily Verses**: Fetches and displays daily Bible verses.
-- **Teachings of Jesus**: Provides insights into the teachings of Jesus Christ.
-- **Online Insights**: Searches for additional insights and summaries from the web.
-- **Llama 3 and Gemini Integration**: Utilizes LLMs for generating responses and enhancing user interaction.
 
-## Project Structure
-```
-scripture-ai-agent/
-├── src/
-│   ├── agent/
-│   │   ├── __init__.py
-│   │   ├── bible_agent.py
-│   │   └── search_agent.py
-│   ├── services/
-│   │   ├── __init__.py
-│   │   ├── serper_service.py
-│   │   └── llm/
-│   │       ├── __init__.py
-│   │       ├── base_llm.py
-│   │       ├── gemini_llm.py
-│   │       └── hf_llm.py
-│   ├── models/
-│   │   ├── __init__.py
-│   │   └── verse.py
-│   ├── config/
-│   │   ├── __init__.py
-│   │   └── settings.py
-│   └── utils/
-│       ├── __init__.py
-│       └── helpers.py
-├── requirements.txt
-├── setup.py
-└── README.md
-```
+- 🤖 **Intelligent Model Selection**: Dynamically chooses between Gemini and HuggingFace models
+- 📖 **Daily Verse Generation**: Provides daily biblical verses with fallback mechanisms
+- 🔍 **Biblical Search**: Combined AI and online source analysis
+- 📚 **Teaching Generation**: Topic-specific biblical teachings
+- 💭 **Passage Analysis**: Deep scriptural analysis with context and interpretations
+- 📝 **Multiple Output Formats**: Console and Markdown formatting support
+- 🎯 **Goal-Oriented System**: Prioritized goal system for focused interactions
+- 💾 **Memory System**: Learns from past interactions
 
 ## Installation
+
 1. Clone the repository:
-   ```
-   git clone https://github.com/ashioyajotham/bible.git
+```bash
+git clone https://github.com/ashioyajotham/bible-study-agent.git
+cd bible-study-agent
+```
 
-   ```
-2. Navigate to the project directory:
-   ```
-   cd bible
-   ```
-3. Install the required dependencies:
-   ```
-   pip install -r requirements.txt
-   ```
+2. Create and activate virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# or
+venv\Scripts\activate  # Windows
+```
 
-4. Install the package in development mode:
-   ```
-   pip install -e .
-   ```
-5. Verify installation
-   ```
-   bible --version
-   ```
+3. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
 
+4. Set up environment variables:
+```bash
+cp .env.example .env
+```
+
+Edit `.env` file with your API keys:
+```
+SERPER_API_KEY=your_serper_key
+GEMINI_API_KEY=your_gemini_key
+HF_MODEL_ID=your_huggingface_model
+```
 
 ## Usage
-To run the application, execute the following command:
-```
-python src/main.py
 
-# Interactive Mode
-bible --interactive
-
-# Get Daily Verse
-bible --verse
-
-# Search Biblical Insights
-bible --search "faith and works"
-
-# Get teaching on a topic
-bible --teaching "love your enemies"
-
-# Get insights on a topic
-bible --insights "christian living"
-
-# Export study insights to a file
-bible --export study.md
-
-# Get the agent version
-bible --version
-
-# Exit the interactive mode
-exit
-```
-
-```
-# During development
-from src.agent.bible_agent import BibleAgent
+### Interactive Mode
+```python
+from agent.bible_agent import BibleAgent, handle_interactive_mode
 
 agent = BibleAgent()
-verse = agent.get_daily_verse()
+handle_interactive_mode(agent)
 ```
 
-```
-Arguments:
-  --interactive, -i  Run the agent in interactive mode
-  --verse, -v        Get the daily Bible verse
-  --search, -s       Search for biblical insights
-```
+### Available Commands
+- `verse`: Get daily Bible verse
+- `teach`: Get teachings on a specific topic
+- `search`: Search for biblical insights
+- `export`: Export study content to Markdown
+- `quit`: Exit interactive mode
 
-Alternatively, you can use the agent in your Python code:
+### Code Examples
 
 ```python
-# After installing the package
-from bible import BibleAgent
-
+# Initialize agent
 agent = BibleAgent()
 
-# Get daily verse with reflection
+# Get daily verse
 verse = agent.get_daily_verse()
-reflection = agent.generate_reflection(verse)
+
+# Get teachings on a topic
+teachings = agent.get_teachings("love")
 
 # Search biblical insights
-insights = agent.search_biblical_insights("faith and works")
+insights = agent.search_biblical_insights("forgiveness")
 
-# Interactive mode
-agent.start_interactive_session()
+# Analyze a passage
+analysis = agent.analyze_passage("John 3:16")
+
+# Export to markdown
+agent.export_to_markdown(
+    {"verse": verse, "teaching": teachings}, 
+    "study_notes"
+)
 ```
 
-## Advanced Usage Examples
-```python
-# Create a weekly study plan
-agent = BibleAgent()
-topics = ["faith", "hope", "love"]
-for topic in topics:
-    insights = agent.search_biblical_insights(topic)
-    verses = agent.get_related_verses(topic)
-    print(f"\n{topic.upper()} STUDY")
-    print("Insights:", insights)
-    print("Key Verses:", verses)
+## Project Structure
 
-# Export study results
-with open("study_results.md", "w") as f:
-    f.write(f"# Bible Study Results\n\n")
-    f.write(f"## Daily Verse\n{agent.get_daily_verse()}\n\n")
-    f.write(f"## Reflections\n{agent.generate_reflection(verse)}")
+```
+bible-study-agent/
+├── src/
+│   ├── agent/
+│   │   ├── bible_agent.py
+│   │   ├── base_agent.py
+│   │   └── components/
+│   │       └── goal_system.py
+│   ├── services/
+│   │   ├── llm/
+│   │   │   ├── gemini_llm.py
+│   │   │   ├── hf_llm.py
+│   │   │   └── model_selector.py
+│   │   └── serper_service.py
+│   ├── utils/
+│   │   └── formatters/
+│   │       ├── markdown_formatter.py
+│   │       └── console_formatter.py
+│   └── models/
+│       └── verse.py
+├── config/
+│   └── settings.py
+└── requirements.txt
 ```
 
-## Configuration
-- Update the `.env` file with your API keys and other sensitive information.
-- Modify `config/settings.py` for any additional configuration settings.
+## Dependencies
+
+- Python 3.8+
+- Google Gemini API
+- HuggingFace Transformers
+- Serper API
+- requests
+- python-dotenv
 
 ## Contributing
-Contributions are welcome! Please submit a pull request or open an issue for any suggestions or improvements.
+
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
-This project is licensed under the MIT License. See the LICENSE file for details.
+
+This project is licensed under the MIT License - see the LICENSE file for details.
