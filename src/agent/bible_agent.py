@@ -182,7 +182,7 @@ class BibleAgent(BaseAgent):
         )
 
     def get_teachings(self, topic: str = None) -> dict:
-        start_time = time.time()
+        """Get Jesus's teachings, optionally filtered by topic"""
         try:
             context = {
                 'topic': topic,
@@ -195,20 +195,23 @@ class BibleAgent(BaseAgent):
             )
             
             result = self.get_model(selected_model).generate(
-                f"What did Jesus teach about {topic}"
+                f"Provide teachings about {topic}. Include section headers in **bold**, bullet points, and biblical references."
             )
             
-            # Update model performance
-            success = bool(result and len(result) > 0)
-            latency = time.time() - start_time
-            self.model_selector.update_performance(selected_model, success, latency)
-            
-            return {
+            teaching_data = {
                 "teaching": result,
                 "topic": topic,
                 "model_used": selected_model.value,
                 "timestamp": datetime.now().isoformat()
             }
+            
+            # Only print the formatted version
+            formatted_output = self.console_formatter.format_teaching(teaching_data)
+            print(formatted_output)
+            
+            # Return silently for internal use
+            return teaching_data
+            
         except Exception as e:
             logging.error(f"Error in get_teachings: {str(e)}")
             raise

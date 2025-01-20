@@ -1,80 +1,25 @@
-from .base_formatter import BaseFormatter
-from typing import Dict, Any
 from colorama import init, Fore, Style
+from typing import Dict, Any
 
-init()  # Initialize colorama for Windows
+init()
 
-class ConsoleFormatter(BaseFormatter):
+class ConsoleFormatter:
     def format_verse(self, verse: Dict[str, Any]) -> str:
-        return f"""
-{Fore.CYAN}📖 Daily Verse{Style.RESET_ALL}
-{Fore.YELLOW}>{Style.RESET_ALL} {verse['text']}
-
-{Fore.GREEN}Reference{Style.RESET_ALL}: {verse['reference']}
-{Fore.GREEN}Translation{Style.RESET_ALL}: {verse['translation']}
-"""
+        return f"{Fore.CYAN}📖 Daily Verse{Style.RESET_ALL}\n{Fore.YELLOW}>{Style.RESET_ALL} {verse['text']}\n\n{Fore.GREEN}Reference{Style.RESET_ALL}: {verse['reference']}\n{Fore.GREEN}Translation{Style.RESET_ALL}: {verse['translation']}\n"
 
     def format_teaching(self, teaching: Dict[str, Any]) -> str:
-        return f"""
-{Fore.CYAN}🎯 Biblical Teaching: {teaching['topic']}{Style.RESET_ALL}
-
-{teaching['teaching']}
-
-{Fore.BLUE}Generated using {teaching['model_used']} at {teaching['timestamp']}{Style.RESET_ALL}
-"""
-
-    def format_search_results(self, results: Dict[str, Any]) -> str:
-        sources = "\n".join([f"{Fore.YELLOW}•{Style.RESET_ALL} {r['title']}" 
-                           for r in results['online_sources']])
+        content = teaching['teaching']
+        sections = content.split('\n\n')
+        formatted_sections = []
         
-        return f"""
-{Fore.CYAN}🔍 Biblical Insights: "{results['query']}"{Style.RESET_ALL}
+        for section in sections:
+            if '**' in section:
+                title = section.split('**')[1]
+                formatted_sections.append(f"{Fore.CYAN}{title}{Style.RESET_ALL}")
+                content = section.split('\n', 1)[1] if '\n' in section else ''
+                if content:
+                    formatted_sections.append(content)
+            else:
+                formatted_sections.append(section)
 
-{Fore.GREEN}AI Analysis:{Style.RESET_ALL}
-{results['ai_analysis']}
-
-{Fore.GREEN}Online Sources:{Style.RESET_ALL}
-{sources}
-
-{Fore.BLUE}Generated at {results['timestamp']}{Style.RESET_ALL}
-"""
-    from .base_formatter import BaseFormatter
-from typing import Dict, Any
-from colorama import init, Fore, Style
-
-init()  # Initialize colorama for Windows
-
-class ConsoleFormatter(BaseFormatter):
-    def format_verse(self, verse: Dict[str, Any]) -> str:
-        return f"""
-{Fore.CYAN}📖 Daily Verse{Style.RESET_ALL}
-{Fore.YELLOW}>{Style.RESET_ALL} {verse['text']}
-
-{Fore.GREEN}Reference{Style.RESET_ALL}: {verse['reference']}
-{Fore.GREEN}Translation{Style.RESET_ALL}: {verse['translation']}
-"""
-
-    def format_teaching(self, teaching: Dict[str, Any]) -> str:
-        return f"""
-{Fore.CYAN}🎯 Biblical Teaching: {teaching['topic']}{Style.RESET_ALL}
-
-{teaching['teaching']}
-
-{Fore.BLUE}Generated using {teaching['model_used']} at {teaching['timestamp']}{Style.RESET_ALL}
-"""
-
-    def format_search_results(self, results: Dict[str, Any]) -> str:
-        sources = "\n".join([f"{Fore.YELLOW}•{Style.RESET_ALL} {r['title']}" 
-                           for r in results['online_sources']])
-        
-        return f"""
-{Fore.CYAN}🔍 Biblical Insights: "{results['query']}"{Style.RESET_ALL}
-
-{Fore.GREEN}AI Analysis:{Style.RESET_ALL}
-{results['ai_analysis']}
-
-{Fore.GREEN}Online Sources:{Style.RESET_ALL}
-{sources}
-
-{Fore.BLUE}Generated at {results['timestamp']}{Style.RESET_ALL}
-"""
+        return f"{Fore.GREEN}🎯 Biblical Teaching: {teaching['topic']}{Style.RESET_ALL}\n\n{Fore.WHITE}{chr(10).join(formatted_sections)}{Style.RESET_ALL}\n\n{Fore.BLUE}Generated using {teaching['model_used']} at {teaching['timestamp']}{Style.RESET_ALL}"

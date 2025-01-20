@@ -39,22 +39,16 @@ def handle_interactive_mode(agent: BibleAgent):
             
             if command == 'quit':
                 break
-            elif command == 'verse':
-                verse = agent.get_daily_verse()
-                print(f"\nDaily Verse:\n{verse}")
             elif command == 'teach':
                 topic = input("Enter topic: ")
-                teachings = agent.get_teachings(topic)
-                print(f"\nTeachings about {topic}:\n{teachings}")
+                agent.get_teachings(topic)  # Don't print return value
+            elif command == 'verse':
+                agent.get_daily_verse()  # Don't print return value
             elif command == 'search':
                 query = input("Enter search query: ")
-                insights = agent.search_biblical_insights(query)
-                print(f"\nInsights for {query}:\n{insights}")
-            elif command == 'export':
-                filename = create_export_filename("scripture_study")
-                print(f"Export functionality to be implemented: {filename}")
+                agent.search_biblical_insights(query)  # Don't print return value
             else:
-                print("Unknown command. Available commands: verse, teach, search, export, quit")
+                print("Unknown command. Available commands: verse, teach, search, quit")
                 
         except Exception as e:
             logging.error(f"Error processing command {command}: {str(e)}")
