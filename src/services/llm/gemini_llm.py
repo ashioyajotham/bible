@@ -9,7 +9,6 @@ class GeminiLLM:
         
     def generate(self, prompt: str) -> Optional[str]:
         try:
-            # Add generation config
             response = self.model.generate_content(
                 prompt,
                 generation_config={
@@ -26,16 +25,19 @@ class GeminiLLM:
                 }
             )
             
-            if response.prompt_feedback.block_reason:
-                logging.error(f"Content blocked: {response.prompt_feedback.block_reason}")
+            # Check if response has content
+            if not response.parts:
+                logging.error("No content in response")
                 return None
                 
-            if not response.text:
-                logging.error("Empty response from Gemini")
+            # Get text from first part
+            content = response.parts[0].text
+            if not content:
+                logging.error("Empty content in response")
                 return None
                 
-            logging.debug(f"Generated content length: {len(response.text)}")
-            return response.text
+            logging.debug(f"Generated content length: {len(content)}")
+            return content
             
         except Exception as e:
             logging.error(f"Gemini generation error: {str(e)}")

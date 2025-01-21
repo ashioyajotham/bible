@@ -6,19 +6,23 @@ init()
 
 class ConsoleFormatter:
     def format_verse(self, verse: Dict[str, Any]) -> str:
-        return f"{Fore.CYAN}📖 Daily Verse{Style.RESET_ALL}\n{Fore.YELLOW}>{Style.RESET_ALL} {verse['text']}\n\n{Fore.GREEN}Reference{Style.RESET_ALL}: {verse['reference']}\n{Fore.GREEN}Translation{Style.RESET_ALL}: {verse['translation']}\n"
+        return (
+            f"{Fore.CYAN}📖 Daily Verse{Style.RESET_ALL}\n"
+            f"{Fore.YELLOW}>{Style.RESET_ALL} {verse['text']}\n\n"
+            f"{Fore.GREEN}Reference{Style.RESET_ALL}: {verse['reference']}\n"
+            f"{Fore.GREEN}Translation{Style.RESET_ALL}: {verse['translation']}\n"
+        )
 
     def format_teaching(self, teaching: Dict[str, Any]) -> str:
         if not teaching or 'teaching' not in teaching:
             return f"{Fore.RED}No teaching content available{Style.RESET_ALL}"
 
-        return f"""
-{Fore.CYAN}🎯 Biblical Teaching: {teaching['topic']}{Style.RESET_ALL}
-
-{teaching['teaching']}
-
-{Fore.BLUE}Generated using {teaching['model_used']} at {teaching['timestamp']}{Style.RESET_ALL}
-"""
+        return (
+            f"\n{Fore.CYAN}🎯 Biblical Teaching: {teaching['topic']}{Style.RESET_ALL}\n\n"
+            f"{teaching['teaching']}\n\n"
+            f"{Fore.BLUE}Generated using {teaching['model_used']} "
+            f"at {teaching['timestamp']}{Style.RESET_ALL}\n"
+        )
 
     def format_search_results(self, results: Dict[str, Any]) -> str:
         # Convert markdown headers to colored console output
@@ -39,3 +43,4 @@ class ConsoleFormatter:
 {online_sources}
 
 {Fore.BLUE}Generated at {results['timestamp']}{Style.RESET_ALL}
+"""

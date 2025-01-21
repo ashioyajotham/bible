@@ -182,59 +182,47 @@ class BibleAgent(BaseAgent):
 
     def get_teachings(self, topic: str = None) -> dict:
         start_time = time.time()
-        error = None
+        model = None
         
         try:
             context = {'topic': topic, 'timestamp': datetime.now().isoformat()}
             
-            for attempt in range(2):  # Try both models if needed
-                try:
-                    selected_model = self.model_selector.select_model(
-                        task=TaskType.TEACHING,
-                        context=context
-                    )
-                    logging.info(f"Attempting with model: {selected_model.value}")
-                    
-                    model = self.get_model(selected_model)
-                    prompt = f"""
-                    Provide biblical teachings about {topic}.
-                    Include scripture references and practical applications.
-                    Focus on spiritual insights and theological understanding.
-                    """
-                    
-                    result = model.generate(prompt)
-                    
-                    if result:
-                        teaching_data = {
-                            "teaching": result,
-                            "topic": topic,
-                            "model_used": selected_model.value,
-                            "timestamp": datetime.now().isoformat()
-                        }
-                        
-                        # Update metrics
-                        self.model_selector.update_performance(
-                            model=selected_model,
-                            success=True,
-                            latency=time.time() - start_time
-                        )
-                        
-                        # Format and display
-                        formatted = self.console_formatter.format_teaching(teaching_data)
-                        print(formatted)
-                        return teaching_data
-                        
-                except Exception as e:
-                    error = str(e)
-                    logging.warning(f"Attempt {attempt + 1} failed: {error}")
-                    continue
-                    
-            raise Exception(f"All models failed. Last error: {error}")
+            # Get initialized model
+            model = self.model_selector.select_and_get_model(
+                task=TaskType.TEACHING,
+                context=context
+            )
+            
+            if not model:
+                raise Exception("Failed to initialize any model")
+            
+            # Generate content
+            result = model.generate(self._create_teaching_prompt(topic))
+            if not result:
+                raise Exception("No content generated")
+            
+            # Package response
+            teaching_data = {
+                "teaching": result,
+                "topic": topic,
+                "model_used": model.model_id,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            # Update performance metrics
+            self.model_selector.update_performance(
+                model=model.model_type,
+                success=True,
+                latency=time.time() - start_time
+            )
+            
+            print(self.console_formatter.format_teaching(teaching_data))
+            return teaching_data
             
         except Exception as e:
-            if selected_model:
+            if model:
                 self.model_selector.update_performance(
-                    model=selected_model,
+                    model=model.model_type,
                     success=False,
                     latency=time.time() - start_time
                 )
@@ -266,283 +254,39 @@ class BibleAgent(BaseAgent):
     def export_to_markdown(self, content: Dict[str, Any], filename: str):
         """Export content to markdown file with rich formatting"""
         with open(f"{filename}.md", "w", encoding='utf-8') as f:
-            f.write("# 📚 Scripture Study Report\n\n")
-            f.write(f"*Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n\n")
-            
-            if 'verse' in content:
-                f.write(self.markdown_formatter.format_verse(content['verse']))
-            if 'teaching' in content:
-                f.write(self.markdown_formatter.format_teaching(content['teaching']))
-            if 'search_results' in content:
-                f.write(self.markdown_formatter.format_search_results(content['search_results']))
+            f.write("# Bible Study Export\n\n")
 
-    def search_biblical_insights(self, query: str) -> dict:
-        search_data = self._perform_search(query)
-        # Track in session
-        self.current_session.searches.append(search_data)
-        return self.console_formatter.format_search_results(search_data)
-
-    def _perform_search(self, query: str) -> dict:
+    def search_biblical_insights(self, query: str) -> Dict[str, Any]:
+        """Search for biblical insights using SerperAPI"""
+        start_time = time.time()
         try:
-            context = {
-                'query': query,
-                'timestamp': datetime.now().isoformat()
-            }
+            # Format search query
+            search_query = f"biblical meaning {query}"
+            logging.debug(f"Searching for: {search_query}")
             
-            selected_model = self.model_selector.select_model(
-                task=TaskType.SEARCH,
-                context=context
-            )
-            
-            prompt = f"""
-Analyze this biblical topic: {query}
-
-Format your response with:
-- Main headings using '## ' (double hashtag)
-- Subheadings using '### ' (triple hashtag)
-- Bullet points for key insights
-- Scripture references in parentheses
-- Clear paragraph breaks
-
-Example format:
-## Main Topic
-Key insights about the topic...
-
-### Subtopic
-- Point 1 (Reference)
-- Point 2 (Reference)
-"""
-            
-            ai_analysis = self.get_model(selected_model).generate(prompt)
-            online_results = self.serper.search(f"biblical meaning {query}")
-            
+            # Get search results
+            results = self.serper.search(search_query)
+            if not results:
+                raise Exception("No search results found")
+                
+            # Format response
             search_data = {
                 "query": query,
-                "ai_analysis": ai_analysis,
-                "online_sources": online_results[:3],
+                "results": results,
                 "timestamp": datetime.now().isoformat()
             }
             
+            # Display results
             print(self.console_formatter.format_search_results(search_data))
             return search_data
             
         except Exception as e:
-            logging.error(f"Error in search_biblical_insights: {str(e)}")
+            logging.error(f"Search error: {str(e)}")
             raise
 
-    def get_related_verses(self, topic: str) -> list:
-        """Get related Bible verses for a topic"""
-        prompt = f"List 3 relevant Bible verses about {topic}"
-        return self.get_llm_response(prompt, task_type='related_verses').split('\n')
-
-    def plan_action(self, user_input: str) -> Dict:
-        """Strategic planning with goals and context"""
-        context = self._get_context()
-        relevant_history = self._get_relevant_history(user_input)
-        
-        plan = {
-            "goals": self._identify_relevant_goals(user_input),
-            "tools": self._select_tools(user_input, context),
-            "steps": self._create_action_steps(user_input),
-            "fallback": self._create_fallback_plan()
-        }
-        
-        return self._execute_plan(plan)
-
-    def execute_action(self, plan: Dict) -> Dict:
-        """Execute planned action using appropriate tool"""
-        tool = self.tools.get(plan['tool'])
-        if not tool:
-            return {'error': 'Tool not found'}
-            
-        result = tool(plan['input'])
-        self._update_memory(plan, result)
-        return result
-
-    def _select_tool(self, plan: str) -> str:
-        """Select appropriate tool based on plan"""
-        keywords = {
-            'search': ['find', 'search', 'look up'],
-            'reflect': ['reflect', 'meditate', 'think'],
-            'verse': ['verse', 'scripture', 'passage'],
-            'teach': ['teach', 'explain', 'understand'],
-            'analyze': ['analyze', 'study', 'examine']
-        }
-        
-        for tool, words in keywords.items():
-            if any(word in plan.lower() for word in words):
-                return tool
-        return 'search'  # default tool
-
-    def _get_context(self) -> Dict:
-        """Get current context for agent"""
-        return {
-            'date': datetime.now(),
-            'last_interaction': self.memory[-1] if self.memory else None,
-            'favorites_count': len(self.favorites)
-        }
-
-    def _update_memory(self, plan: Dict, result: Dict):
-        """Update agent memory with interaction"""
-        self.memory.append({
-            'timestamp': datetime.now(),
-            'plan': plan,
-            'result': result,
-            'context': self._get_context()
-        })
-
-    def remember(self, interaction: dict):
-        """Agent memory system"""
-        self.memory.append({
-            'timestamp': datetime.now(),
-            'interaction': interaction,
-            'context': {'date': datetime.now().date()}
-        })
-
-    def get_llm_response(self, prompt: str, task_type: str) -> str:
-        selected_model = self.model_selector.select_model(
-            task_type=task_type,
-            context=self._get_context()
-        )
-        
-        try:
-            self.current_model = self.models[selected_model]
-            response = self.current_model.generate(prompt)
-            self.model_selector.track_performance(selected_model, True)
-            return response
-        except Exception as e:
-            logging.error(f"Model {selected_model} failed: {str(e)}")
-            self.model_selector.track_performance(selected_model, False)
-            return self._fallback_response(prompt)
-
-    def _fallback_response(self, prompt: str) -> str:
-        """Try fallback models if primary fails"""
-        for model_type in self.model_selector.fallback_order:
-            if model_type in self.models:
-                try:
-                    return self.models[model_type].generate(prompt)
-                except:
-                    continue
-        return "Sorry, all models are currently unavailable."
-
-    def learn_from_interaction(self, interaction: Dict):
-        """Agent learning from experiences"""
-        self.learning_history.append({
-            "interaction": interaction,
-            "outcome": interaction.get("success", False),
-            "improvements": self._identify_improvements(interaction)
-        })
-        self._update_strategies(self.learning_history[-1])
-
-    def analyze_passage(self, passage: str) -> Dict:
-        """Analyze a biblical passage for deeper understanding"""
-        try:
-            context = self._get_context()
-            selected_model = self.model_selector.select_model(TaskType.ANALYSIS)
-            
-            prompt = f"Analyze this biblical passage deeply:\n{passage}\n\nProvide:\n1. Context\n2. Key themes\n3. Interpretations\n4. Applications"
-            analysis = self.get_model(selected_model).generate(prompt)
-            
-            # Get related verses
-            related_verses = self.get_related_verses(passage)
-            
-            return {
-                "analysis": analysis,
-                "related_verses": related_verses,
-                "context": context,
-                "timestamp": datetime.now().isoformat()
-            }
-        except Exception as e:
-            logging.error(f"Failed to analyze passage: {str(e)}")
-            raise
-
-    def export_study_session(self, filename: str = None) -> None:
-        try:
-            print("\nExport Options:")
-            print("1. Current session")
-            print("2. Selected content")
-            print("3. Everything")
-            
-            choice = input("\nChoose export option (1-3): ").strip()
-            
-            content = {}
-            if choice == "1":
-                content = self._prepare_session_content(self.current_session)
-            elif choice == "2":
-                content = self._select_content_for_export()
-            elif choice == "3":
-                content = self._prepare_all_content()
-            else:
-                raise ValueError("Invalid choice")
-
-            if not filename:
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"bible_study_{timestamp}.md"
-            elif not filename.endswith('.md'):
-                filename += '.md'
-
-            formatted_content = self.markdown_formatter.format_study_session(content)
-            with open(filename, 'w', encoding='utf-8') as f:
-                f.write(formatted_content)
-                
-            print(f"\n{Fore.GREEN}✅ Study session exported to: {filename}{Style.RESET_ALL}")
-            
-        except Exception as e:
-            logging.error(f"Error exporting study session: {str(e)}")
-            print(f"\n{Fore.RED}❌ Failed to export study session: {str(e)}{Style.RESET_ALL}")
-
-    def _select_content_for_export(self) -> Dict:
-        content = {}
-        
-        print("\nSelect content to export:")
-        if self.current_session.verses:
-            print("1. Verses")
-        if self.current_session.teachings:
-            print("2. Teachings")
-        if self.current_session.searches:
-            print("3. Search results")
-            
-        selections = input("\nEnter numbers (comma-separated): ").strip().split(',')
-        
-        for selection in selections:
-            if selection.strip() == "1" and self.current_session.verses:
-                content['verses'] = self.current_session.verses
-            elif selection.strip() == "2" and self.current_session.teachings:
-                content['teachings'] = self.current_session.teachings
-            elif selection.strip() == "3" and self.current_session.searches:
-                content['searches'] = self.current_session.searches
-                
-        return content
-
-def handle_interactive_mode(agent: BibleAgent):
-    """Handle interactive mode with command processing"""
-    print("\nBible Study AI Agent - Interactive Mode")
-    print("Commands: verse, teach, search, export, quit")
-    
-    while True:
-        try:
-            command = input("\nEnter command: ").strip().lower()
-            
-            if command == 'quit':
-                break
-            elif command == 'verse':
-                formatted_verse = agent.get_daily_verse()
-                print(formatted_verse)
-            elif command == 'teach':
-                topic = input("Enter topic: ")
-                teachings = agent.get_teachings(topic)
-                print(agent.console_formatter.format_teaching(teachings))
-            elif command == 'search':
-                query = input("Enter search query: ")
-                results = agent.search_biblical_insights(query)
-                print(agent.console_formatter.format_search_results(results))
-            elif command == 'export':
-                filename = input("Enter filename (without extension): ")
-                agent.export_to_markdown({"verse": agent.get_daily_verse()}, filename)
-                print(f"Exported to {filename}.md")
-            else:
-                print("Unknown command. Available commands: verse, teach, search, export, quit")
-                
-        except Exception as e:
-            logging.error(f"Error processing command {command}: {str(e)}")
-            print(f"Error: {str(e)}")
+    def _create_search_prompt(self, query: str) -> str:
+        return f"""
+        Please provide biblical insights and references about: {query}
+        Include relevant scripture verses and theological context.
+        Focus on practical application and spiritual understanding.
+        """

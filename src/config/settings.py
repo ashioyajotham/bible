@@ -5,13 +5,12 @@ from datetime import datetime
 load_dotenv()
 
 class Config:
-    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     SERPER_API_KEY = os.getenv('SERPER_API_KEY')
     BIBLE_API_KEY = os.getenv('BIBLE_API_KEY')
     BIBLE_API_BASE_URL = "https://bible-api.com/data/kjv"
     SERPER_API_BASE_URL = "https://google.serper.dev/search"
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-    HF_MODEL_ID = os.getenv('HF_MODEL_ID', 'meta-llama/Llama-3.1-70B-Instruct')
+    HF_MODEL_ID = os.getenv('HF_MODEL_ID', 'microsoft/phi-2')
     ACTIVE_LLM = os.getenv('ACTIVE_LLM', 'gemini')  # gemini, llama
     HF_TOKEN = os.getenv('HF_TOKEN')
     

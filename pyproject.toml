@@ -11,7 +11,8 @@ dependencies = [
     "requests>=2.31.0",
     "python-dotenv>=1.0.0",
     "google-generativeai>=0.3.0",
-    "colorama>=0.4.6"
+    "colorama>=0.4.6",
+    "accelerate>=0.26.0"
 ]
 
 [tool.setuptools]
