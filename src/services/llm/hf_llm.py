@@ -1,14 +1,21 @@
 from transformers import AutoTokenizer, pipeline
 import torch
 import logging
-from config.settings import Config
 from typing import Optional
+from .model_types import ModelType
 
 class HuggingFaceLLM:
     def __init__(self, model_id: str = None):
         try:
-            # Use smaller model and set configs
-            self.model_id = "microsoft/phi-2"  # Much smaller model that works on CPU
+            # Set model type based on model_id
+            if "phi-2" in model_id:
+                self.model_type = ModelType.PHI
+            elif "llama" in model_id.lower():
+                self.model_type = ModelType.LLAMA
+            else:
+                self.model_type = ModelType.PHI  # Default fallback
+                
+            self.model_id = model_id or "microsoft/phi-2"  # Default to PHI-2
             self.device = "cpu"  # Force CPU for reliability
             
             self.pipe = pipeline(

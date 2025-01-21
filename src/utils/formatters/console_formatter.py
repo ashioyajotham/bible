@@ -24,23 +24,31 @@ class ConsoleFormatter:
             f"at {teaching['timestamp']}{Style.RESET_ALL}\n"
         )
 
-    def format_search_results(self, results: Dict[str, Any]) -> str:
-        # Convert markdown headers to colored console output
-        analysis = results['ai_analysis'].replace('## ', f"\n{Fore.CYAN}")
-        analysis = analysis.replace('### ', f"\n{Fore.GREEN}")
-        
-        online_sources = "\n".join([
-            f"{Fore.YELLOW}• {source['title']}{Style.RESET_ALL}\n  {Fore.BLUE}{source['link']}{Style.RESET_ALL}"
-            for source in results['online_sources']
-        ])
+    def format_search_results(self, search_data: Dict[str, Any]) -> str:
+        if not search_data or 'results' not in search_data:
+            return f"{Fore.RED}No search results available{Style.RESET_ALL}"
 
-        return f"""
-{Fore.CYAN}🔍 Biblical Search: "{results['query']}"{Style.RESET_ALL}
+        output = [
+            f"\n{Fore.CYAN}🔍 Biblical Search: {search_data['query']}{Style.RESET_ALL}\n"
+        ]
 
-{analysis}{Style.RESET_ALL}
+        for idx, result in enumerate(search_data['results'], 1):
+            output.extend([
+                f"\n{Fore.GREEN}{idx}. {result.get('title', 'No title')}{Style.RESET_ALL}",
+                f"{Fore.YELLOW}>{Style.RESET_ALL} {result.get('snippet', 'No description')}",
+                f"{Fore.BLUE}{result.get('link', '')}{Style.RESET_ALL}\n"
+            ])
 
-{Fore.GREEN}Related Sources:{Style.RESET_ALL}
-{online_sources}
+        return "\n".join(output)
 
-{Fore.BLUE}Generated at {results['timestamp']}{Style.RESET_ALL}
-"""
+    def format_analysis(self, analysis: Dict[str, Any]) -> str:
+        if not analysis or 'analysis' not in analysis:
+            return f"{Fore.RED}No analysis available{Style.RESET_ALL}"
+
+        return (
+            f"\n{Fore.CYAN}📚 Biblical Analysis{Style.RESET_ALL}\n\n"
+            f"{Fore.YELLOW}Passage:{Style.RESET_ALL}\n{analysis['passage']}\n\n"
+            f"{Fore.GREEN}Analysis:{Style.RESET_ALL}\n{analysis['analysis']}\n\n"
+            f"{Fore.BLUE}Generated using {analysis['model_used']} "
+            f"at {analysis['timestamp']}{Style.RESET_ALL}\n"
+        )

@@ -1,24 +1,13 @@
-from enum import Enum
 from typing import Dict, Optional, List, Any
 from datetime import datetime, timedelta
 import logging
 import numpy as np
 from dataclasses import dataclass, field
 from collections import defaultdict
+from .model_types import ModelType, TaskType  # Updated import
 from .gemini_llm import GeminiLLM
 from .hf_llm import HuggingFaceLLM
 from config.settings import Config
-
-class TaskType(Enum):
-    SEARCH = "search"           # Biblical search and research
-    TEACHING = "teaching"       # Extracting teachings and lessons
-    ANALYSIS = "analysis"       # Deep scriptural analysis
-    REFLECTION = "reflection"   # Personal/devotional reflection
-
-class ModelType(Enum):
-    PHI = "phi-2"      # Default, balanced model
-    GEMINI = "gemini"  # Good for structured responses
-    LLAMA = "llama"    # Good for creative content
 
 @dataclass
 class ModelCapability:

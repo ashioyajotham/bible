@@ -229,6 +229,22 @@ class BibleAgent(BaseAgent):
             logging.error(f"Teaching generation failed: {str(e)}")
             raise
 
+    def _create_teaching_prompt(self, topic: str) -> str:
+        """Create a structured prompt for biblical teaching generation"""
+        return f"""
+        Provide biblical teachings and insights about: {topic}
+        
+        Please include:
+        1. Key biblical principles
+        2. Relevant scripture references
+        3. Practical applications
+        4. Spiritual wisdom
+        5. Examples from biblical narratives
+        
+        Format the response with clear sections and scripture citations.
+        Focus on providing deep spiritual insights while maintaining theological accuracy.
+        """
+
     def generate_reflection(self, verse: Verse) -> str:
         """Generate reflection using best-suited model"""
         selected_model = self.model_selector.select_model(
@@ -289,4 +305,77 @@ class BibleAgent(BaseAgent):
         Please provide biblical insights and references about: {query}
         Include relevant scripture verses and theological context.
         Focus on practical application and spiritual understanding.
+        """
+
+    def analyze_passage(self, passage: str) -> Dict[str, Any]:
+        """Analyze biblical passage using selected model"""
+        start_time = time.time()
+        model = None
+        
+        try:
+            context = {
+                'passage': passage,
+                'timestamp': datetime.now().isoformat(),
+                'type': 'analysis'
+            }
+            
+            # Get initialized model
+            model = self.model_selector.select_and_get_model(
+                task=TaskType.ANALYSIS,
+                context=context
+            )
+            
+            if not model:
+                raise Exception("Failed to initialize model for analysis")
+                
+            # Create analysis prompt
+            prompt = self._create_analysis_prompt(passage)
+            result = model.generate(prompt)
+            
+            if not result:
+                raise Exception("No analysis generated")
+                
+            # Package response
+            analysis_data = {
+                "passage": passage,
+                "analysis": result,
+                "model_used": model.model_id,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            # Update metrics
+            if hasattr(model, 'model_type'):
+                self.model_selector.update_performance(
+                    model=model.model_type,
+                    success=True,
+                    latency=time.time() - start_time
+                )
+            
+            # Display results
+            print(self.console_formatter.format_analysis(analysis_data))
+            return analysis_data
+            
+        except Exception as e:
+            if model and hasattr(model, 'model_type'):
+                self.model_selector.update_performance(
+                    model=model.model_type,
+                    success=False,
+                    latency=time.time() - start_time
+                )
+            logging.error(f"Analysis failed: {str(e)}")
+            raise
+
+    def _create_analysis_prompt(self, passage: str) -> str:
+        """Create prompt for passage analysis"""
+        return f"""
+        Analyze the following biblical passage:
+        
+        {passage}
+        
+        Please provide:
+        1. Historical context
+        2. Key themes and messages
+        3. Theological significance
+        4. Practical applications
+        5. Related cross-references
         """
