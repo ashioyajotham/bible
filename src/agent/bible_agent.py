@@ -254,7 +254,6 @@ class BibleAgent(BaseAgent):
                 f.write(self.markdown_formatter.format_search_results(content['search_results']))
 
     def search_biblical_insights(self, query: str) -> dict:
-        """Search for biblical insights using both LLM and online sources"""
         try:
             context = {
                 'query': query,
@@ -266,13 +265,26 @@ class BibleAgent(BaseAgent):
                 context=context
             )
             
-            # Get AI analysis
-            ai_analysis = self.get_model(selected_model).generate(
-                f"Provide a comprehensive biblical analysis of: {query}\n" +
-                "Include scriptural references and theological insights."
-            )
+            prompt = f"""
+Analyze this biblical topic: {query}
+
+Format your response with:
+- Main headings using '## ' (double hashtag)
+- Subheadings using '### ' (triple hashtag)
+- Bullet points for key insights
+- Scripture references in parentheses
+- Clear paragraph breaks
+
+Example format:
+## Main Topic
+Key insights about the topic...
+
+### Subtopic
+- Point 1 (Reference)
+- Point 2 (Reference)
+"""
             
-            # Get online sources
+            ai_analysis = self.get_model(selected_model).generate(prompt)
             online_results = self.serper.search(f"biblical meaning {query}")
             
             search_data = {
@@ -282,10 +294,7 @@ class BibleAgent(BaseAgent):
                 "timestamp": datetime.now().isoformat()
             }
             
-            # Only print formatted output
             print(self.console_formatter.format_search_results(search_data))
-            
-            # Return silently for internal use
             return search_data
             
         except Exception as e:

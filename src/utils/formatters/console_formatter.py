@@ -25,6 +25,10 @@ class ConsoleFormatter:
         return f"{Fore.GREEN}🎯 Biblical Teaching: {teaching['topic']}{Style.RESET_ALL}\n\n{Fore.WHITE}{chr(10).join(formatted_sections)}{Style.RESET_ALL}\n\n{Fore.BLUE}Generated using {teaching['model_used']} at {teaching['timestamp']}{Style.RESET_ALL}"
 
     def format_search_results(self, results: Dict[str, Any]) -> str:
+        # Convert markdown headers to colored console output
+        analysis = results['ai_analysis'].replace('## ', f"\n{Fore.CYAN}")
+        analysis = analysis.replace('### ', f"\n{Fore.GREEN}")
+        
         online_sources = "\n".join([
             f"{Fore.YELLOW}• {source['title']}{Style.RESET_ALL}\n  {Fore.BLUE}{source['link']}{Style.RESET_ALL}"
             for source in results['online_sources']
@@ -33,8 +37,7 @@ class ConsoleFormatter:
         return f"""
 {Fore.CYAN}🔍 Biblical Search: "{results['query']}"{Style.RESET_ALL}
 
-{Fore.GREEN}AI Analysis:{Style.RESET_ALL}
-{results['ai_analysis']}
+{analysis}{Style.RESET_ALL}
 
 {Fore.GREEN}Related Sources:{Style.RESET_ALL}
 {online_sources}
