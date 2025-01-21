@@ -12,6 +12,7 @@ from services.llm.gemini_llm import GeminiLLM
 from services.llm.hf_llm import HuggingFaceLLM
 from services.llm.model_selector import ModelSelector, ModelType, TaskType
 from typing import Dict, List, Optional, Any
+from models.verse_categories import VerseCategory, VerseCatalog
 
 from colorama import init, Fore, Style
 
@@ -24,21 +25,36 @@ from utils.formatters.markdown_formatter import MarkdownFormatter
 from utils.formatters.console_formatter import ConsoleFormatter
 from .components.session import StudySession
 
+import numpy as np
+
 class BibleAgent(BaseAgent):
     def __init__(self):
         logging.debug("Initializing BibleAgent")
         try:
-            super().__init__()  # Initialize BaseAgent first
+            super().__init__()
+            self.console_formatter = ConsoleFormatter()
             self.model_selector = ModelSelector()
             self._models = {}
             self.current_model_type = ModelType.GEMINI
+            
+            # Initialize verse system
+            self.verse_catalog = VerseCatalog()
+            self.verse_preferences = {
+                "preferred_translations": ["ESV", "NIV", "KJV"],
+                "categories": [
+                    VerseCategory.WISDOM,
+                    VerseCategory.ENCOURAGEMENT,
+                    VerseCategory.FAITH
+                ],
+                "review_interval_days": 7
+            }
+            
             self._initialize_goals()
             self._initialize_daily_verses()
             
             # Add session tracking
             self.current_session = StudySession()
             
-            logging.debug("BibleAgent initialized successfully")
         except Exception as e:
             logging.error(f"Failed to initialize BibleAgent: {str(e)}")
             raise
@@ -67,6 +83,7 @@ class BibleAgent(BaseAgent):
         
         self.markdown_formatter = MarkdownFormatter()
         self.console_formatter = ConsoleFormatter()
+        self.verse_history = []
 
     def _initialize_goals(self):
         """Initialize agent goals"""
@@ -82,15 +99,16 @@ class BibleAgent(BaseAgent):
         ))
 
     def _initialize_daily_verses(self):
-        """Initialize default daily verses"""
-        self.daily_verses = {
-            "default": [
-                "john/3:16",
-                "philippians/4:13",
-                "psalm/23:1",
-                "proverbs/3:5-6"
-            ]
-        }
+        """Initialize daily verse cache"""
+        try:
+            verse = self.get_daily_verse()
+            if verse:
+                self.current_verse = verse
+            else:
+                raise Exception("Failed to fetch initial verse")
+        except Exception as e:
+            logging.error(f"Failed to initialize daily verses: {str(e)}")
+            raise
 
     def get_model(self, model_type: ModelType):
         if (model_type not in self._models):
@@ -104,81 +122,52 @@ class BibleAgent(BaseAgent):
     def current_model(self):
         return self.get_model(self.current_model_type)
 
-    def get_daily_verse(self) -> Optional[str]:
-        verse_data = self._fetch_daily_verse()
-        if verse_data:
-            # Track in session
-            self.current_session.verses.append({
-                'text': verse_data.text,
-                'reference': verse_data.reference,
-                'translation': verse_data.translation,
-                'timestamp': datetime.now().isoformat()
-            })
-            return self.console_formatter.format_verse(verse_data)
-        return None
+    def _get_fallback_verse(self) -> Verse:
+        """Provide a reliable fallback verse when API calls fail"""
+        return Verse(
+            text="The LORD is my shepherd; I shall not want.",
+            reference="Psalm 23:1",
+            translation="KJV",
+            category=VerseCategory.ENCOURAGEMENT
+        )
 
-    def _fetch_daily_verse(self) -> Optional[Verse]:
-        """Get verse based on date or random selection"""
+    def get_daily_verse(self) -> Optional[Verse]:
+        """Fetch a verse based on preferences"""
         try:
-            verses = self.daily_verses["default"]
-            verse_ref = random.choice(verses)
+            category = random.choice(self.verse_preferences["categories"])
+            reference = self.verse_catalog.get_random_verse_by_category(category)
             
-            # URL encode the verse reference
-            encoded_ref = urllib.parse.quote(verse_ref)
-            url = f"https://bible-api.com/{encoded_ref}"  # Removed 'data/kjv' path
+            for translation in self.verse_preferences["preferred_translations"]:
+                try:
+                    verse = self._fetch_verse(reference, translation)
+                    if verse:
+                        return verse
+                except Exception:
+                    continue
+                    
+            return self._get_fallback_verse()
             
-            logging.debug(f"Fetching verse from: {url}")
-            response = requests.get(url)
-            
-            if response.status_code == 404:
-                # Try alternate format (e.g., 'psalms' instead of 'psalm')
-                alternate_ref = self._get_alternate_reference(verse_ref)
-                url = f"https://bible-api.com/{urllib.parse.quote(alternate_ref)}"
-                logging.debug(f"Retrying with alternate reference: {url}")
-                response = requests.get(url)
-            
-            response.raise_for_status()
-            data = response.json()
-            
-            verse = Verse(
-                text=data['text'].strip(),
-                reference=data['reference'],
-                translation=data.get('translation_name', 'KJV')
-            )
-
-            # Format the verse for console output
-            formatted_verse = self.console_formatter.format_verse({
-                'text': verse.text,
-                'reference': verse.reference,
-                'translation': verse.translation
-            })
-            
-            print(formatted_verse)
-            return verse
-
         except Exception as e:
             logging.error(f"Error fetching verse: {str(e)}")
             return self._get_fallback_verse()
 
-    def _get_alternate_reference(self, verse_ref: str) -> str:
-        """Get alternate format for verse reference"""
-        mapping = {
-            'psalm/': 'psalms/',
-            'proverbs/': 'proverb/',
-            'song/': 'songofsolomon/'
-        }
-        for old, new in mapping.items():
-            if old in verse_ref:
-                return verse_ref.replace(old, new)
-        return verse_ref
-
-    def _get_fallback_verse(self) -> Verse:
-        """Return a hardcoded verse when API fails"""
-        return Verse(
-            text="For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life.",
-            reference="John 3:16",
-            translation="ESV"
-        )
+    def _fetch_verse(self, reference: str, translation: str) -> Optional[Verse]:
+        """Fetch verse from API with specified translation"""
+        try:
+            url = f"https://bible-api.com/{urllib.parse.quote(reference)}"
+            response = requests.get(url)
+            response.raise_for_status()
+            data = response.json()
+            
+            return Verse(
+                text=data['text'].strip(),
+                reference=reference,
+                translation=translation
+            )
+            
+        except Exception as e:
+            logging.error(f"Error fetching verse {reference}: {str(e)}")
+            return None
 
     def get_teachings(self, topic: str = None) -> dict:
         start_time = time.time()
@@ -379,3 +368,11 @@ class BibleAgent(BaseAgent):
         4. Practical applications
         5. Related cross-references
         """
+
+    def suggest_related_verses(self, verse: Verse) -> List[Verse]:
+        """Suggest related verses based on category and cross-references"""
+        pass
+
+    def get_verses_for_review(self) -> List[Verse]:
+        """Get verses due for review based on review_interval_days"""
+        pass

@@ -5,6 +5,7 @@ The Verse class represents a Bible verse with text, reference, translation, tags
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import List, Optional
+from .verse_categories import VerseCategory
 
 @dataclass
 class Verse:
@@ -14,6 +15,11 @@ class Verse:
     tags: List[str] = field(default_factory=list)
     timestamp: datetime = field(default_factory=datetime.now)
     is_favorite: bool = False
+    category: Optional[VerseCategory] = None
+    study_notes: List[str] = field(default_factory=list)
+    cross_references: List[str] = field(default_factory=list)
+    last_reviewed: Optional[datetime] = None
+    times_reviewed: int = 0
     
     def format_verse(self) -> str:
         """Returns formatted verse with reference"""
@@ -24,10 +30,7 @@ class Verse:
         return {
             "text": self.text,
             "reference": self.reference,
-            "translation": self.translation,
-            "tags": self.tags,
-            "timestamp": self.timestamp.isoformat(),
-            "is_favorite": self.is_favorite
+            "translation": self.translation
         }
     
     @classmethod
@@ -48,3 +51,18 @@ class Verse:
         """Remove a tag from the verse"""
         if tag in self.tags:
             self.tags.remove(tag)
+    
+    def add_study_note(self, note: str):
+        self.study_notes.append(note)
+        self.last_reviewed = datetime.now()
+        self.times_reviewed += 1
+    
+    def add_cross_reference(self, reference: str):
+        if reference not in self.cross_references:
+            self.cross_references.append(reference)
+    
+    def get_review_status(self) -> str:
+        if not self.last_reviewed:
+            return "Never reviewed"
+        days_since = (datetime.now() - self.last_reviewed).days
+        return f"Last reviewed {days_since} days ago"

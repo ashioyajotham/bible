@@ -12,6 +12,7 @@ class Config:
     # API Keys with fallbacks
     GEMINI_API_KEY: str = os.getenv('GEMINI_API_KEY', '')
     SERPER_API_KEY: str = os.getenv('SERPER_API_KEY', '')
+    ESV_API_KEY: str = os.getenv('ESV_API_KEY', '') 
     HF_API_KEY: str = os.getenv('HF_API_KEY', '')
     
     # Model Configuration
