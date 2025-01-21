@@ -132,41 +132,90 @@ class BibleAgent(BaseAgent):
         )
 
     def get_daily_verse(self) -> Optional[Verse]:
-        """Fetch a verse based on preferences"""
+        """Get daily verse with proper error handling"""
         try:
-            category = random.choice(self.verse_preferences["categories"])
-            reference = self.verse_catalog.get_random_verse_by_category(category)
+            # Default verse if all else fails
+            default_verse = self._get_fallback_verse()
             
-            for translation in self.verse_preferences["preferred_translations"]:
-                try:
-                    verse = self._fetch_verse(reference, translation)
-                    if verse:
-                        return verse
-                except Exception:
-                    continue
-                    
-            return self._get_fallback_verse()
+            # Try to get verse from preferred categories
+            category = random.choice(self.verse_preferences["categories"])
+            
+            # Use predefined verses if catalog fails
+            verses = {
+                VerseCategory.WISDOM: ["Proverbs 3:5-6", "James 1:5"],
+                VerseCategory.ENCOURAGEMENT: ["Philippians 4:13", "Isaiah 41:10"],
+                VerseCategory.FAITH: ["Hebrews 11:1", "Romans 10:17"]
+            }
+            
+            reference = random.choice(verses.get(category, ["Psalm 23:1"]))
+            logging.debug(f"Selected verse reference: {reference}")
+            
+            # Try ESV API
+            verse = self._fetch_verse(reference, "ESV")
+            if verse:
+                return verse
+                
+            return default_verse
             
         except Exception as e:
-            logging.error(f"Error fetching verse: {str(e)}")
+            logging.error(f"Error in get_daily_verse: {str(e)}")
             return self._get_fallback_verse()
 
     def _fetch_verse(self, reference: str, translation: str) -> Optional[Verse]:
-        """Fetch verse from API with specified translation"""
+        """Fetch verse from ESV API"""
         try:
-            url = f"https://bible-api.com/{urllib.parse.quote(reference)}"
-            response = requests.get(url)
+            url = "https://api.esv.org/v3/passage/text/"
+            headers = {'Authorization': f'Token {Config.ESV_API_KEY}'}
+            
+            params = {
+                'q': reference,
+                'include-headings': False,
+                'include-footnotes': False,
+                'include-verse-numbers': False,
+                'include-short-copyright': False,
+                'include-passage-references': True
+            }
+            
+            logging.debug(f"Fetching from ESV API: {reference}")
+            response = requests.get(url, headers=headers, params=params)
             response.raise_for_status()
+            
             data = response.json()
             
-            return Verse(
-                text=data['text'].strip(),
+            # Save detailed response to JSON file
+            output_dir = Config.DATA_DIR / "verses"
+            output_dir.mkdir(parents=True, exist_ok=True)
+            
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            json_file = output_dir / f"verse_response_{timestamp}.json"
+            
+            with open(json_file, 'w') as f:
+                json.dump({
+                    'api_response': data,
+                    'timestamp': datetime.now().isoformat(),
+                    'reference': reference
+                }, f, indent=2)
+                
+            logging.info(f"Detailed response saved to: {json_file}")
+            
+            if not data.get('passages'):
+                return None
+                
+            verse = Verse(
+                text=data['passages'][0].strip(),
                 reference=reference,
-                translation=translation
+                translation="ESV",
+                category=self.verse_preferences["categories"][0]
             )
             
+            verse_dict = verse.to_dict()
+            logging.debug(f"Processed verse: {json.dumps(verse_dict, indent=2)}")
+            print(self.console_formatter.format_verse(verse_dict))
+            print(f"\n{Fore.BLUE}💾 Detailed response saved to: {json_file}{Style.RESET_ALL}")
+            return verse
+            
         except Exception as e:
-            logging.error(f"Error fetching verse {reference}: {str(e)}")
+            logging.error(f"ESV API error: {str(e)}")
             return None
 
     def get_teachings(self, topic: str = None) -> dict:

@@ -5,12 +5,12 @@ from typing import Dict, Any
 init()
 
 class ConsoleFormatter:
-    def format_verse(self, verse: Dict[str, Any]) -> str:
+    def format_verse(self, verse_data: Dict) -> str:
+        """Format verse display with colors and structure"""
         return (
-            f"{Fore.CYAN}📖 Daily Verse{Style.RESET_ALL}\n"
-            f"{Fore.YELLOW}>{Style.RESET_ALL} {verse['text']}\n\n"
-            f"{Fore.GREEN}Reference{Style.RESET_ALL}: {verse['reference']}\n"
-            f"{Fore.GREEN}Translation{Style.RESET_ALL}: {verse['translation']}\n"
+            f"\n{Fore.CYAN}📖 Daily Verse{Style.RESET_ALL}\n"
+            f"\n{Fore.GREEN}{verse_data['text']}{Style.RESET_ALL}\n"
+            f"\n{Fore.YELLOW}— {verse_data['reference']} ({verse_data['translation']}){Style.RESET_ALL}\n"
         )
 
     def format_teaching(self, teaching: Dict[str, Any]) -> str:

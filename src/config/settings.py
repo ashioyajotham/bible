@@ -24,6 +24,7 @@ class Config:
     PROJECT_ROOT: Path = Path(__file__).parent.parent.parent
     DATA_DIR: Path = PROJECT_ROOT / "data"
     CACHE_DIR: Path = PROJECT_ROOT / "cache"
+    VERSES_DIR: Path = DATA_DIR / "verses"
     
     # Logging Configuration
     LOG_LEVEL: str = os.getenv('LOG_LEVEL', 'INFO')
@@ -50,5 +51,5 @@ class Config:
     @classmethod
     def ensure_directories(cls) -> None:
         """Ensure required directories exist"""
-        for directory in [cls.DATA_DIR, cls.CACHE_DIR, cls.LOG_FILE.parent]:
+        for directory in [cls.DATA_DIR, cls.CACHE_DIR, cls.LOG_FILE.parent, cls.VERSES_DIR]:
             directory.mkdir(parents=True, exist_ok=True)

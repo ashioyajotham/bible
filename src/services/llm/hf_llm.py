@@ -56,43 +56,39 @@ class HuggingFaceLLM:
 
     def generate(self, prompt: str) -> Optional[str]:
         try:
-            # Create structured prompt
-            formatted_prompt = f"""{self.system_prompt}
+            # Improved prompt engineering
+            formatted_prompt = f"""You are a biblical teaching assistant providing direct spiritual insights.
 
-Question: {prompt}
+Topic: {prompt}
 
-Provide biblical teaching with:
-1. Clear theological insights
-2. Scripture references
-3. Practical applications
+Share biblical teachings about this topic, including:
+- Key Biblical principles with accurate scripture references
+- Clear spiritual insights from God's Word
+- Practical applications for daily life
+- Examples from Biblical narratives
 
-Response:"""
-
-            # Generate with optimized parameters
+Remember to speak directly to the reader and maintain a pastoral tone.
+"""
+            # Optimize generation parameters
             response = self.pipe(
                 formatted_prompt,
                 max_new_tokens=256,
                 do_sample=True,
-                temperature=0.7,
-                top_p=0.9,
-                top_k=40,
-                num_return_sequences=1,
+                temperature=0.8,  # Slightly increased for more natural language
+                top_p=0.92,
+                top_k=50,
                 repetition_penalty=1.2,
-                # Stop on common end markers
-                eos_token_id=self.pipe.tokenizer.eos_token_id,
-                pad_token_id=self.pipe.tokenizer.eos_token_id,
-                # Prevent prompt repetition
-                no_repeat_ngram_size=3
+                no_repeat_ngram_size=3,
+                pad_token_id=self.pipe.tokenizer.eos_token_id
             )
             
             if response and len(response) > 0:
-                # Extract only the response part
-                generated_text = response[0]['generated_text']
-                # Find where the actual response starts
-                response_start = generated_text.find("Response:") + 9
-                if response_start > 8:
-                    return generated_text[response_start:].strip()
-                return generated_text.replace(formatted_prompt, "").strip()
+                # Clean up response
+                text = response[0]['generated_text']
+                # Remove prompt and any meta-instructions
+                text = text.replace(formatted_prompt, "").strip()
+                text = text.split("Generated using")[0].strip()
+                return text
                 
             return None
             
