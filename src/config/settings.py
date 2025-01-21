@@ -1,50 +1,53 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
-from datetime import datetime
+from dataclasses import dataclass
+from typing import Optional
 
+# Load environment variables
 load_dotenv()
 
+@dataclass
 class Config:
-    SERPER_API_KEY = os.getenv('SERPER_API_KEY')
-    BIBLE_API_KEY = os.getenv('BIBLE_API_KEY')
-    BIBLE_API_BASE_URL = "https://bible-api.com/data/kjv"
-    SERPER_API_BASE_URL = "https://google.serper.dev/search"
-    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-    HF_MODEL_ID = os.getenv('HF_MODEL_ID', 'microsoft/phi-2')
-    ACTIVE_LLM = os.getenv('ACTIVE_LLM', 'gemini')  # gemini, llama
-    HF_TOKEN = os.getenv('HF_TOKEN')
+    # API Keys with fallbacks
+    GEMINI_API_KEY: str = os.getenv('GEMINI_API_KEY', '')
+    SERPER_API_KEY: str = os.getenv('SERPER_API_KEY', '')
+    HF_API_KEY: str = os.getenv('HF_API_KEY', '')
     
-    # Daily verses for each month and day
-    DAILY_VERSES = {
-        # January
-        "1-1": ("proverbs/16:9", "New Year - Fresh Start"),
-        "1-7": ("2_corinthians/5:17", "New Beginnings"),
-        
-        # February
-        "2-14": ("1_corinthians/13:4-7", "Valentine's Day - Love"),
-        
-        # March/April (Easter - needs calculation)
-        "easter": ("john/11:25-26", "Easter Sunday"),
-        "easter-2": ("matthew/28:6", "Easter Season"),
-        
-        # July
-        "7-4": ("psalm/33:12", "Independence Day"),
-        
-        # November
-        "11-25": ("psalm/100:4", "Thanksgiving"),
-        
-        # December
-        "12-24": ("luke/2:10-11", "Christmas Eve"),
-        "12-25": ("isaiah/9:6", "Christmas Day"),
-        "12-31": ("psalm/90:12", "Year End")
-    }
+    # Model Configuration
+    DEFAULT_MODEL: str = "phi-2"
+    MAX_TOKENS: int = 2048
+    TEMPERATURE: float = 0.7
     
-    # Season verses
-    SEASONAL_VERSES = {
-        "spring": ["song_of_solomon/2:11-12", "psalm/104:30"],
-        "summer": ["psalm/74:17", "james/1:17"],
-        "autumn": ["ecclesiastes/3:1-2", "psalm/126:5-6"],
-        "winter": ["isaiah/1:18", "job/37:5-6"]
-    }
-
-# "https://bible-api.com/data/kjv"
+    # File Paths
+    PROJECT_ROOT: Path = Path(__file__).parent.parent.parent
+    DATA_DIR: Path = PROJECT_ROOT / "data"
+    CACHE_DIR: Path = PROJECT_ROOT / "cache"
+    
+    # Logging Configuration
+    LOG_LEVEL: str = os.getenv('LOG_LEVEL', 'INFO')
+    LOG_FILE: Path = PROJECT_ROOT / "logs" / "bible_agent.log"
+    
+    # Search Configuration
+    MAX_SEARCH_RESULTS: int = 5
+    SEARCH_TIMEOUT: int = 10
+    
+    # Session Configuration
+    MAX_MEMORY_ITEMS: int = 100
+    MAX_FAVORITES: int = 50
+    
+    @classmethod
+    def validate(cls) -> bool:
+        """Validate required configuration"""
+        required_keys = ['GEMINI_API_KEY', 'SERPER_API_KEY']
+        missing = [key for key in required_keys if not getattr(cls, key)]
+        
+        if missing:
+            raise ValueError(f"Missing required configuration: {', '.join(missing)}")
+        return True
+    
+    @classmethod
+    def ensure_directories(cls) -> None:
+        """Ensure required directories exist"""
+        for directory in [cls.DATA_DIR, cls.CACHE_DIR, cls.LOG_FILE.parent]:
+            directory.mkdir(parents=True, exist_ok=True)
