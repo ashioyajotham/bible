@@ -4,6 +4,7 @@ import json
 from datetime import datetime
 import time
 from functools import lru_cache
+import logging
 
 class SerperService:
     def __init__(self, api_key: str):
@@ -17,29 +18,32 @@ class SerperService:
         self.max_retries = 3
 
     @lru_cache(maxsize=100)
-    def search(self, query: str, num_results: int = 5) -> List[Dict]:
-        """Execute search with retry logic"""
-        endpoint = f"{self.base_url}/search"
-        
-        payload = {
-            "q": query,
-            "num": num_results
-        }
-
-        for attempt in range(self.max_retries):
-            try:
-                response = requests.post(
-                    endpoint,
-                    headers=self.headers,
-                    json=payload,
-                    timeout=self.timeout
-                )
-                response.raise_for_status()
-                return self._parse_results(response.json())
-            except Exception as e:
-                if attempt == self.max_retries - 1:
-                    raise Exception(f"Search failed after {self.max_retries} attempts: {str(e)}")
-                time.sleep(2 ** attempt)  # Exponential backoff
+    def search(self, query: str) -> List[Dict]:
+        """Perform search with enhanced result length"""
+        try:
+            url = "https://google.serper.dev/search"
+            headers = {
+                'X-API-KEY': self.api_key,
+                'Content-Type': 'application/json'
+            }
+            
+            payload = {
+                'q': f'biblical teaching {query}',
+                'num': 5,  # Number of results
+                'page': 1,
+                'type': 'search',
+                'snippetLength': 300  # Request longer snippets
+            }
+            
+            response = requests.post(url, headers=headers, json=payload)
+            response.raise_for_status()
+            
+            data = response.json()
+            return data.get('organic', [])[:5]  # Return top 5 results
+            
+        except Exception as e:
+            logging.error(f"Search error: {str(e)}")
+            return []
 
     def _parse_results(self, raw_results: Dict) -> List[Dict]:
         """Parse and clean search results"""

@@ -1,6 +1,7 @@
 from colorama import init, Fore, Style, Back
 from typing import Dict, Any
 import textwrap
+from datetime import datetime
 
 init()
 
@@ -49,22 +50,47 @@ class ConsoleFormatter:
         # Combine all elements
         return f"{header}{topic}\n{formatted_content}\n{footer}"
 
-    def format_search_results(self, search_data: Dict[str, Any]) -> str:
-        if not search_data or 'results' not in search_data:
-            return f"{Fore.RED}No search results available{Style.RESET_ALL}"
+    def format_search_results(self, search_data: Dict) -> str:
+        """Format search results with rich styling and longer snippets"""
+        # Create styled header
+        header = f"""
+{Fore.CYAN}╔{'═' * 60}╗
+║{' ' * 25}SEARCH RESULTS{' ' * 24}║
+╚{'═' * 60}╝{Style.RESET_ALL}"""
 
-        output = [
-            f"\n{Fore.CYAN}🔍 Biblical Search: {search_data['query']}{Style.RESET_ALL}\n"
-        ]
+        # Format query
+        query = f"\n{Fore.YELLOW}🔍 Query: {search_data['query'].upper()}{Style.RESET_ALL}\n"
 
+        # Process results
+        results = []
         for idx, result in enumerate(search_data['results'], 1):
-            output.extend([
-                f"\n{Fore.GREEN}{idx}. {result.get('title', 'No title')}{Style.RESET_ALL}",
-                f"{Fore.YELLOW}>{Style.RESET_ALL} {result.get('snippet', 'No description')}",
-                f"{Fore.BLUE}{result.get('link', '')}{Style.RESET_ALL}\n"
-            ])
+            # Format each result with more detailed content
+            result_block = f"""
+{Fore.GREEN}Result #{idx}{Style.RESET_ALL}
+{Fore.BLUE}{'─' * 60}{Style.RESET_ALL}
+{Fore.CYAN}Title:{Style.RESET_ALL} {result.get('title', 'No title')}
 
-        return "\n".join(output)
+{Fore.CYAN}Summary:{Style.RESET_ALL}
+{textwrap.fill(result.get('snippet', 'No description'), width=70)}
+
+{Fore.CYAN}Key Points:{Style.RESET_ALL}
+{textwrap.fill(result.get('description', result.get('snippet', '')), width=70)}
+
+{Fore.BLUE}Source:{Style.RESET_ALL} {result.get('link', 'No link available')}
+"""
+            results.append(result_block)
+
+        # Join results with decorative separator
+        separator = f"\n{Fore.BLUE}• {'═' * 58} •{Style.RESET_ALL}\n"
+        formatted_results = separator.join(results)
+
+        # Add footer with timestamp
+        footer = f"""
+{Fore.CYAN}╔{'═' * 60}╗
+║{' ' * 15}Search completed at {datetime.now().strftime('%H:%M:%S')}{' ' * 15}║
+╚{'═' * 60}╝{Style.RESET_ALL}"""
+
+        return f"{header}{query}\n{formatted_results}\n{footer}"
 
     def format_analysis(self, analysis: Dict[str, Any]) -> str:
         if not analysis or 'analysis' not in analysis:
