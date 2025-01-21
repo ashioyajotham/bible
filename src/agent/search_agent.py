@@ -14,33 +14,69 @@ class SearchAgent:
     def search_and_analyze(self, query: str) -> Dict:
         """Enhanced biblical search with Gemini analysis"""
         try:
-            # Get search results
+            # Get raw search results
             raw_results = self.serper.search(query)
-            validated_results = self._validate_results(raw_results)
+
+            # Generate overall summary using Gemini
+            summary_prompt = f"""Provide a biblical perspective on: {query}
+            Based on these search results:
+            {[result.get('snippet', '') for result in raw_results[:3]]}
             
-            # Generate insights using Gemini
-            insights_prompt = f"""
-            Analyze these search results about "{query}" from a biblical perspective:
-            {validated_results[:3]}
-            
-            Provide:
-            1. Biblical interpretation
-            2. Theological context
-            3. Practical application
-            4. Related scripture references
+            Include:
+            1. Key theological insights
+            2. Biblical principles
+            3. Relevant scripture references
+            4. Practical applications
             """
-            
-            biblical_insights = self.gemini.generate(insights_prompt)
-            
+            overall_summary = self.gemini.generate(summary_prompt)
+
+            # Enhance each result with Gemini analysis
+            enhanced_results = []
+            for result in raw_results[:5]:  # Process top 5 results
+                analysis_prompt = f"""Analyze this content from a biblical perspective:
+                {result.get('snippet', '')}
+                
+                Provide:
+                1. Main spiritual points
+                2. Connection to scripture
+                3. Application for Christian life
+                """
+                theological_analysis = self.gemini.generate(analysis_prompt)
+                
+                enhanced_results.append({
+                    'title': result.get('title', ''),
+                    'link': result.get('link', ''),
+                    'snippet': result.get('snippet', ''),
+                    'analysis': theological_analysis
+                })
+
             return {
                 "query": query,
-                "insights": biblical_insights,
-                "sources": validated_results[:3],
+                "summary": overall_summary,
+                "results": enhanced_results,
                 "timestamp": datetime.now().isoformat()
             }
-            
+
         except Exception as e:
             logging.error(f"Search and analysis failed: {str(e)}")
+            raise
+
+    def reflect_on_results(self, search_results: Dict) -> str:
+        """Generate spiritual reflection on search results"""
+        try:
+            reflection_prompt = f"""Provide a spiritual reflection on these search findings about: {search_results['query']}
+            
+            Consider:
+            1. Spiritual significance
+            2. Personal application
+            3. Prayer points
+            4. Meditation focus
+            """
+            
+            return self.gemini.generate(reflection_prompt)
+            
+        except Exception as e:
+            logging.error(f"Reflection generation failed: {str(e)}")
             raise
 
     def get_summary(self, text: str) -> Dict:

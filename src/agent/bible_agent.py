@@ -402,11 +402,11 @@ class BibleAgent(BaseAgent):
             if not filename:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 filename = f"bible_study_{timestamp}"
-                
+            
             # Ensure filename has .md extension
             if not filename.endswith('.md'):
                 filename += '.md'
-                
+            
             # Create exports directory if it doesn't exist
             export_dir = Config.DATA_DIR / "exports"
             export_dir.mkdir(parents=True, exist_ok=True)
@@ -420,22 +420,24 @@ class BibleAgent(BaseAgent):
                 "\n## Study Content\n"
             ]
             
-            if hasattr(self, 'current_verse'):
+            # Add verse if available
+            if hasattr(self, 'current_verse') and self.current_verse:
                 content.extend([
                     "\n### Daily Verse\n",
                     f"> {self.current_verse.text}\n",
                     f"*— {self.current_verse.reference} ({self.current_verse.translation})*\n"
                 ])
             
-            if hasattr(self, 'current_session'):
-                if self.current_session.teachings:
+            # Add current session content if available
+            if hasattr(self, 'current_session') and self.current_session:
+                if hasattr(self.current_session, 'teachings'):
                     content.extend([
                         "\n### Teachings\n",
                         *[f"#### {t['topic']}\n{t['teaching']}\n" 
                           for t in self.current_session.teachings]
                     ])
-                    
-                if self.current_session.searches:
+                
+                if hasattr(self.current_session, 'searches'):
                     content.extend([
                         "\n### Search Results\n",
                         *[f"#### Query: {s['query']}\n{s['insights']}\n" 
@@ -445,7 +447,7 @@ class BibleAgent(BaseAgent):
             # Write content to file
             with open(export_path, 'w', encoding='utf-8') as f:
                 f.writelines(content)
-                
+            
             print(self.console_formatter.format_export_success(str(export_path)))
             return str(export_path)
             
