@@ -55,6 +55,7 @@ class ModelSelector:
         self.performance_history = defaultdict(list)
         self.task_affinity = self._initialize_task_affinity()
         self.models: Dict[ModelType, Any] = {}
+        self.default_model = ModelType.GEMINI
 
     def _initialize_task_affinity(self) -> Dict:
         return {
@@ -81,46 +82,9 @@ class ModelSelector:
         }
 
     def select_model(self, task: TaskType, context: Optional[Dict] = None) -> ModelType:
-        try:
-            scores = {}
-            task_config = self.task_affinity[task.value]
-            
-            for model_type, capability in self.capabilities.items():
-                # Calculate capability match
-                capability_score = self._calculate_capability_score(
-                    capability.strengths,
-                    task_config["required_capabilities"]
-                )
-                
-                # Calculate performance score
-                performance_score = self._calculate_performance_score(
-                    model_type,
-                    task_config["latency_importance"]
-                )
-                
-                # Calculate context suitability
-                context_score = self._calculate_context_score(
-                    capability,
-                    context,
-                    task_config["token_importance"]
-                )
-                
-                # Combine scores with base weight
-                scores[model_type] = (
-                    capability_score * 0.4 +
-                    performance_score * 0.3 +
-                    context_score * 0.3
-                ) * capability.base_weight
-                
-            logging.debug(f"Model scores for {task.value}: {scores}")
-            
-            # Select highest scoring model or fallback to PHI
-            selected = max(scores.items(), key=lambda x: x[1])[0]
-            return selected if scores[selected] > 0.4 else ModelType.PHI
-            
-        except Exception as e:
-            logging.error(f"Model selection error: {str(e)}")
-            return ModelType.PHI  # Safe fallback
+        """Always return Gemini for now"""
+        logging.info("Using Gemini for all tasks")
+        return ModelType.GEMINI
 
     def _initialize_model(self, model_type: ModelType) -> Optional[Any]:
         """Initialize a new model instance"""
@@ -147,23 +111,16 @@ class ModelSelector:
         return self._model_instances.get(model_type)
 
     def select_and_get_model(self, task: TaskType, context: Optional[Dict] = None) -> Optional[Any]:
-        """Select and return initialized model"""
+        """Get initialized Gemini model"""
         try:
-            # Get model type with highest score
-            selected_type = self.select_model(task, context)
-            logging.info(f"Selected model type: {selected_type}")
-
-            # Try to get/initialize selected model
-            model = self.get_model(selected_type)
-            if model:
-                return model
-
-            # Fallback to PHI if primary fails
-            logging.warning(f"Primary model {selected_type} failed, trying PHI")
-            return self.get_model(ModelType.PHI)
-
+            model = self.get_model(ModelType.GEMINI)
+            if not model:
+                logging.error("Failed to initialize Gemini model")
+                raise Exception("Model initialization failed")
+            return model
+            
         except Exception as e:
-            logging.error(f"Model selection/initialization failed: {str(e)}")
+            logging.error(f"Model selection failed: {str(e)}")
             return None
 
     def _calculate_capability_score(self, model_strengths: List[str], required_capabilities: List[str]) -> float:
