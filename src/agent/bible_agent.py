@@ -22,6 +22,7 @@ from .base_agent import BaseAgent
 from .components.goal_system import Goal, GoalPriority
 from utils.formatters.markdown_formatter import MarkdownFormatter
 from utils.formatters.console_formatter import ConsoleFormatter
+from .components.session import StudySession
 
 class BibleAgent(BaseAgent):
     def __init__(self):
@@ -33,6 +34,10 @@ class BibleAgent(BaseAgent):
             self.current_model_type = ModelType.GEMINI
             self._initialize_goals()
             self._initialize_daily_verses()
+            
+            # Add session tracking
+            self.current_session = StudySession()
+            
             logging.debug("BibleAgent initialized successfully")
         except Exception as e:
             logging.error(f"Failed to initialize BibleAgent: {str(e)}")
@@ -100,35 +105,17 @@ class BibleAgent(BaseAgent):
         return self.get_model(self.current_model_type)
 
     def get_daily_verse(self) -> Optional[str]:
-        """Get verse based on date or random selection with formatted output"""
-        try:
-            verses = self.daily_verses["default"]
-            verse_ref = random.choice(verses)
-            response = requests.get(f"https://bible-api.com/{verse_ref}")
-            response.raise_for_status()
-            
-            data = response.json()
-            verse = Verse(
-                text=data['text'].strip(),
-                reference=data['reference'],
-                translation=data.get('translation_name', 'ESV')
-            )
-            
-            # Return only the formatted version
-            return self.console_formatter.format_verse({
-                'text': verse.text,
-                'reference': verse.reference,
-                'translation': verse.translation
+        verse_data = self._fetch_daily_verse()
+        if verse_data:
+            # Track in session
+            self.current_session.verses.append({
+                'text': verse_data.text,
+                'reference': verse_data.reference,
+                'translation': verse_data.translation,
+                'timestamp': datetime.now().isoformat()
             })
-        except Exception as e:
-            logging.error(f"Error fetching verse: {str(e)}")
-            # Return formatted fallback verse
-            fallback = self._get_fallback_verse()
-            return self.console_formatter.format_verse({
-                'text': fallback.text,
-                'reference': fallback.reference,
-                'translation': fallback.translation
-            })
+            return self.console_formatter.format_verse(verse_data)
+        return None
 
     def _fetch_daily_verse(self) -> Optional[Verse]:
         """Get verse based on date or random selection"""
@@ -138,7 +125,7 @@ class BibleAgent(BaseAgent):
             
             # URL encode the verse reference
             encoded_ref = urllib.parse.quote(verse_ref)
-            url = f"https://bible-api.com/{encoded_ref}"
+            url = f"https://api.scripture.api.bible/v1/swagger.json{encoded_ref}"
             
             logging.debug(f"Fetching verse from: {url}")
             response = requests.get(url)
@@ -146,7 +133,7 @@ class BibleAgent(BaseAgent):
             if response.status_code == 404:
                 # Try alternate format (e.g., 'psalms' instead of 'psalm')
                 alternate_ref = self._get_alternate_reference(verse_ref)
-                url = f"https://bible-api.com/{urllib.parse.quote(alternate_ref)}"
+                url = f"https://api.scripture.api.bible/v1/swagger.json{urllib.parse.quote(alternate_ref)}"
                 logging.debug(f"Retrying with alternate reference: {url}")
                 response = requests.get(url)
             
@@ -184,6 +171,12 @@ class BibleAgent(BaseAgent):
         )
 
     def get_teachings(self, topic: str = None) -> dict:
+        teaching_data = self._get_teaching_content(topic)
+        # Track in session
+        self.current_session.teachings.append(teaching_data)
+        return self.console_formatter.format_teaching(teaching_data)
+
+    def _get_teaching_content(self, topic: str = None) -> dict:
         """Get Jesus's teachings, optionally filtered by topic"""
         try:
             context = {
@@ -254,6 +247,12 @@ class BibleAgent(BaseAgent):
                 f.write(self.markdown_formatter.format_search_results(content['search_results']))
 
     def search_biblical_insights(self, query: str) -> dict:
+        search_data = self._perform_search(query)
+        # Track in session
+        self.current_session.searches.append(search_data)
+        return self.console_formatter.format_search_results(search_data)
+
+    def _perform_search(self, query: str) -> dict:
         try:
             context = {
                 'query': query,
@@ -428,40 +427,30 @@ Key insights about the topic...
             raise
 
     def export_study_session(self, filename: str = None) -> None:
-        """Export current study session to markdown file"""
         try:
-            # Gather study content
+            print("\nExport Options:")
+            print("1. Current session")
+            print("2. Selected content")
+            print("3. Everything")
+            
+            choice = input("\nChoose export option (1-3): ").strip()
+            
             content = {}
-            
-            # Get daily verse
-            verse = self._fetch_daily_verse()
-            if verse:
-                content['verse'] = {
-                    'text': verse.text,
-                    'reference': verse.reference,
-                    'translation': verse.translation
-                }
-            
-            # Get a teaching on love as example
-            teachings = self.get_teachings("love")
-            if teachings:
-                content['teaching'] = teachings
-            
-            # Get some biblical insights
-            search = self.search_biblical_insights("God's nature")
-            if search:
-                content['search_results'] = search
-            
-            # Generate filename if not provided
+            if choice == "1":
+                content = self._prepare_session_content(self.current_session)
+            elif choice == "2":
+                content = self._select_content_for_export()
+            elif choice == "3":
+                content = self._prepare_all_content()
+            else:
+                raise ValueError("Invalid choice")
+
             if not filename:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"bible_study_{timestamp}"
-            
-            # Ensure .md extension
-            if not filename.endswith('.md'):
+                filename = f"bible_study_{timestamp}.md"
+            elif not filename.endswith('.md'):
                 filename += '.md'
-            
-            # Export to file
+
             formatted_content = self.markdown_formatter.format_study_session(content)
             with open(filename, 'w', encoding='utf-8') as f:
                 f.write(formatted_content)
@@ -471,6 +460,29 @@ Key insights about the topic...
         except Exception as e:
             logging.error(f"Error exporting study session: {str(e)}")
             print(f"\n{Fore.RED}❌ Failed to export study session: {str(e)}{Style.RESET_ALL}")
+
+    def _select_content_for_export(self) -> Dict:
+        content = {}
+        
+        print("\nSelect content to export:")
+        if self.current_session.verses:
+            print("1. Verses")
+        if self.current_session.teachings:
+            print("2. Teachings")
+        if self.current_session.searches:
+            print("3. Search results")
+            
+        selections = input("\nEnter numbers (comma-separated): ").strip().split(',')
+        
+        for selection in selections:
+            if selection.strip() == "1" and self.current_session.verses:
+                content['verses'] = self.current_session.verses
+            elif selection.strip() == "2" and self.current_session.teachings:
+                content['teachings'] = self.current_session.teachings
+            elif selection.strip() == "3" and self.current_session.searches:
+                content['searches'] = self.current_session.searches
+                
+        return content
 
 def handle_interactive_mode(agent: BibleAgent):
     """Handle interactive mode with command processing"""

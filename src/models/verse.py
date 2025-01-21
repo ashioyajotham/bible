@@ -1,3 +1,7 @@
+"""
+The Verse class represents a Bible verse with text, reference, translation, tags, timestamp, and favorite status.
+"""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import List, Optional

@@ -5,7 +5,7 @@ Core services for API integrations and data processing
 
 __version__ = "0.1.0"
 
-from llm.hf_llm import HuggingFaceLLM
+from .llm.hf_llm import HuggingFaceLLM
 from .serper_service import SerperService
 
 # Define default configurations
