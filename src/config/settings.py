@@ -8,7 +8,7 @@ class Config:
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     SERPER_API_KEY = os.getenv('SERPER_API_KEY')
     BIBLE_API_KEY = os.getenv('BIBLE_API_KEY')
-    BIBLE_API_BASE_URL = "https://bible-api.com"
+    BIBLE_API_BASE_URL = "https://bible-api.com/data/kjv"
     SERPER_API_BASE_URL = "https://google.serper.dev/search"
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
     HF_MODEL_ID = os.getenv('HF_MODEL_ID', 'meta-llama/Llama-3.1-70B-Instruct')
@@ -47,3 +47,5 @@ class Config:
         "autumn": ["ecclesiastes/3:1-2", "psalm/126:5-6"],
         "winter": ["isaiah/1:18", "job/37:5-6"]
     }
+
+# "https://bible-api.com/data/kjv"

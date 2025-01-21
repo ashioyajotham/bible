@@ -10,10 +10,15 @@ class HuggingFaceLLM(BaseLLM):
     def __init__(self, model_id: str = "meta-llama/Llama-3.1-70B-Instruct"):
         self._authenticate()
         try:
+            # Suppress TensorFlow logging
+            os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Only show errors
+            # Disable oneDNN custom operations message
+            os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+            
             self.generator = pipeline(
                 "text-generation",
                 model=model_id,
-                device="cuda" if torch.cuda.is_available() else "cpu",
+                device_map="auto",
                 trust_remote_code=True,
                 temperature=0.7,
                 max_length=512

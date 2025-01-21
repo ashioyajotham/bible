@@ -1,6 +1,12 @@
+import os
 import argparse
 import sys
 import logging
+
+# Set TensorFlow logging before any imports
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+
 from datetime import datetime
 from agent.bible_agent import BibleAgent
 from utils.helpers import setup_logging, create_export_filename

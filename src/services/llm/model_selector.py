@@ -1,7 +1,9 @@
 from enum import Enum
-from typing import Dict, Optional
-from datetime import datetime
+from typing import Dict, Optional, List
+from datetime import datetime, timedelta
 import logging
+import numpy as np
+from dataclasses import dataclass, field
 
 class TaskType(Enum):
     SEARCH = "search"           # Biblical search and research
@@ -13,77 +15,81 @@ class ModelType(Enum):
     GEMINI = "gemini"  # Better for factual, structured responses
     LLAMA = "llama"    # Better for creative, reflective content
 
+class ModelMetrics:
+    def __init__(self):
+        self.success_count: int = 0
+        self.fail_count: int = 0
+        self.latencies: List[float] = []
+        self.last_used: Optional[datetime] = None
+        
+    @property
+    def success_rate(self) -> float:
+        total = self.success_count + self.fail_count
+        return self.success_count / total if total > 0 else 0.5
+
 class ModelSelector:
     def __init__(self):
-        self.performance_metrics = {
-            ModelType.GEMINI: {"success_rate": 0.9, "avg_latency": 1.2},
-            ModelType.LLAMA: {"success_rate": 0.85, "avg_latency": 2.0}
+        self.metrics = {
+            ModelType.GEMINI: ModelMetrics(),
+            ModelType.LLAMA: ModelMetrics()
         }
+        
+        # Initialize base weights
         self.task_preferences = {
-            TaskType.SEARCH: {"factual_weight": 0.8, "creative_weight": 0.2},
-            TaskType.TEACHING: {"factual_weight": 0.6, "creative_weight": 0.4},
-            TaskType.ANALYSIS: {"factual_weight": 0.7, "creative_weight": 0.3},
-            TaskType.REFLECTION: {"factual_weight": 0.3, "creative_weight": 0.7}
+            TaskType.TEACHING: {
+                ModelType.GEMINI: 0.6,
+                ModelType.LLAMA: 0.8  # LLAMA preferred for teaching
+            },
+            TaskType.SEARCH: {
+                ModelType.GEMINI: 0.8,  # Gemini preferred for search
+                ModelType.LLAMA: 0.6
+            }
         }
-        self.history = []
 
     def select_model(self, task: TaskType, context: Optional[Dict] = None) -> ModelType:
-        """Select best model based on task requirements and context"""
-        context = context or {}
-        logging.debug(f"Selecting model for task: {task.value} with context: {context}")
-
         try:
-            # Get task preferences
-            preferences = self.task_preferences[task]
-            
-            # Calculate scores for each model
             scores = {}
             for model in ModelType:
-                metrics = self.performance_metrics[model]
-                score = self._calculate_model_score(model, task, metrics, preferences)
-                scores[model] = score
-
-            # Select model with highest score
-            selected_model = max(scores.items(), key=lambda x: x[1])[0]
+                metrics = self.metrics[model]
+                base_score = self.task_preferences[task][model]
+                
+                # Calculate score components
+                success_component = metrics.success_rate * 0.4
+                recency_component = self._calculate_recency(metrics.last_used) * 0.2
+                task_component = base_score * 0.4
+                
+                scores[model] = success_component + recency_component + task_component
+                
+            logging.debug(f"Detailed scores - {scores}")
             
-            # Record selection
-            self._record_selection(selected_model, task, context)
+            # Try Gemini first
+            if scores[ModelType.GEMINI] > 0.4:
+                return ModelType.GEMINI
+                
+            # Fallback to LLAMA
+            logging.info("Falling back to LLAMA model")
+            return ModelType.LLAMA
             
-            logging.debug(f"Selected model {selected_model.value} with scores: {scores}")
-            return selected_model
-
         except Exception as e:
-            logging.error(f"Error selecting model: {str(e)}")
-            return ModelType.GEMINI  # Default fallback
-
-    def _calculate_model_score(self, model: ModelType, task: TaskType, 
-                             metrics: Dict, preferences: Dict) -> float:
-        """Calculate score for a model based on task requirements"""
-        base_score = metrics['success_rate'] * 0.7 + (1 / metrics['avg_latency']) * 0.3
-        
-        if model == ModelType.GEMINI:
-            task_alignment = preferences['factual_weight']
-        else:  # LLAMA
-            task_alignment = preferences['creative_weight']
+            logging.error(f"Error in model selection: {str(e)}")
+            return ModelType.LLAMA  # Default fallback
             
-        return base_score * task_alignment
-
-    def _record_selection(self, model: ModelType, task: TaskType, context: Dict):
-        """Record model selection for performance tracking"""
-        self.history.append({
-            'timestamp': datetime.now().isoformat(),
-            'model': model.value,
-            'task': task.value,
-            'context': context
-        })
+    def _calculate_recency(self, last_used: Optional[datetime]) -> float:
+        if not last_used:
+            return 0.5
+        hours_ago = (datetime.now() - last_used).total_seconds() / 3600
+        return 1.0 / (1.0 + hours_ago)  # Decay over time
 
     def update_performance(self, model: ModelType, success: bool, latency: float):
-        """Update performance metrics for a model"""
-        metrics = self.performance_metrics[model]
-        current_success = metrics['success_rate']
-        current_latency = metrics['avg_latency']
+        metrics = self.metrics[model]
+        if success:
+            metrics.success_count += 1
+        else:
+            metrics.fail_count += 1
         
-        # Update with moving average
-        alpha = 0.1  # Learning rate
-        metrics['success_rate'] = current_success * (1-alpha) + int(success) * alpha
-        metrics['avg_latency'] = current_latency * (1-alpha) + latency * alpha
+        metrics.latencies.append(latency)
+        metrics.last_used = datetime.now()
+        
+        # Keep only last 100 latencies
+        if len(metrics.latencies) > 100:
+            metrics.latencies.pop(0)

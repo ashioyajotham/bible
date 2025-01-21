@@ -125,7 +125,7 @@ class BibleAgent(BaseAgent):
             
             # URL encode the verse reference
             encoded_ref = urllib.parse.quote(verse_ref)
-            url = f"https://api.scripture.api.bible/v1/swagger.json{encoded_ref}"
+            url = f"https://bible-api.com/{encoded_ref}"  # Removed 'data/kjv' path
             
             logging.debug(f"Fetching verse from: {url}")
             response = requests.get(url)
@@ -133,19 +133,29 @@ class BibleAgent(BaseAgent):
             if response.status_code == 404:
                 # Try alternate format (e.g., 'psalms' instead of 'psalm')
                 alternate_ref = self._get_alternate_reference(verse_ref)
-                url = f"https://api.scripture.api.bible/v1/swagger.json{urllib.parse.quote(alternate_ref)}"
+                url = f"https://bible-api.com/{urllib.parse.quote(alternate_ref)}"
                 logging.debug(f"Retrying with alternate reference: {url}")
                 response = requests.get(url)
             
             response.raise_for_status()
             data = response.json()
             
-            return Verse(
+            verse = Verse(
                 text=data['text'].strip(),
                 reference=data['reference'],
                 translation=data.get('translation_name', 'KJV')
             )
+
+            # Format the verse for console output
+            formatted_verse = self.console_formatter.format_verse({
+                'text': verse.text,
+                'reference': verse.reference,
+                'translation': verse.translation
+            })
             
+            print(formatted_verse)
+            return verse
+
         except Exception as e:
             logging.error(f"Error fetching verse: {str(e)}")
             return self._get_fallback_verse()
@@ -171,44 +181,64 @@ class BibleAgent(BaseAgent):
         )
 
     def get_teachings(self, topic: str = None) -> dict:
-        teaching_data = self._get_teaching_content(topic)
-        # Track in session
-        self.current_session.teachings.append(teaching_data)
-        return self.console_formatter.format_teaching(teaching_data)
-
-    def _get_teaching_content(self, topic: str = None) -> dict:
-        """Get Jesus's teachings, optionally filtered by topic"""
+        start_time = time.time()
+        error = None
+        
         try:
-            context = {
-                'topic': topic,
-                'timestamp': datetime.now().isoformat()
-            }
+            context = {'topic': topic, 'timestamp': datetime.now().isoformat()}
             
-            selected_model = self.model_selector.select_model(
-                task=TaskType.TEACHING,
-                context=context
-            )
-            
-            result = self.get_model(selected_model).generate(
-                f"Provide teachings about {topic}. Include section headers in **bold**, bullet points, and biblical references."
-            )
-            
-            teaching_data = {
-                "teaching": result,
-                "topic": topic,
-                "model_used": selected_model.value,
-                "timestamp": datetime.now().isoformat()
-            }
-            
-            # Only print the formatted version
-            formatted_output = self.console_formatter.format_teaching(teaching_data)
-            print(formatted_output)
-            
-            # Return silently for internal use
-            return teaching_data
+            for attempt in range(2):  # Try both models if needed
+                try:
+                    selected_model = self.model_selector.select_model(
+                        task=TaskType.TEACHING,
+                        context=context
+                    )
+                    logging.info(f"Attempting with model: {selected_model.value}")
+                    
+                    model = self.get_model(selected_model)
+                    prompt = f"""
+                    Provide biblical teachings about {topic}.
+                    Include scripture references and practical applications.
+                    Focus on spiritual insights and theological understanding.
+                    """
+                    
+                    result = model.generate(prompt)
+                    
+                    if result:
+                        teaching_data = {
+                            "teaching": result,
+                            "topic": topic,
+                            "model_used": selected_model.value,
+                            "timestamp": datetime.now().isoformat()
+                        }
+                        
+                        # Update metrics
+                        self.model_selector.update_performance(
+                            model=selected_model,
+                            success=True,
+                            latency=time.time() - start_time
+                        )
+                        
+                        # Format and display
+                        formatted = self.console_formatter.format_teaching(teaching_data)
+                        print(formatted)
+                        return teaching_data
+                        
+                except Exception as e:
+                    error = str(e)
+                    logging.warning(f"Attempt {attempt + 1} failed: {error}")
+                    continue
+                    
+            raise Exception(f"All models failed. Last error: {error}")
             
         except Exception as e:
-            logging.error(f"Error in get_teachings: {str(e)}")
+            if selected_model:
+                self.model_selector.update_performance(
+                    model=selected_model,
+                    success=False,
+                    latency=time.time() - start_time
+                )
+            logging.error(f"Teaching generation failed: {str(e)}")
             raise
 
     def generate_reflection(self, verse: Verse) -> str:
