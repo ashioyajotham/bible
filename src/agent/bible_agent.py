@@ -394,3 +394,61 @@ class BibleAgent(BaseAgent):
     def get_verses_for_review(self) -> List[Verse]:
         """Get verses due for review based on review_interval_days"""
         pass
+
+    def export_study_session(self, filename: Optional[str] = None) -> str:
+        """Export current study session to markdown file"""
+        try:
+            # Generate timestamp-based filename if none provided
+            if not filename:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"bible_study_{timestamp}"
+                
+            # Ensure filename has .md extension
+            if not filename.endswith('.md'):
+                filename += '.md'
+                
+            # Create exports directory if it doesn't exist
+            export_dir = Config.DATA_DIR / "exports"
+            export_dir.mkdir(parents=True, exist_ok=True)
+            
+            export_path = export_dir / filename
+            
+            # Format study session content
+            content = [
+                "# Bible Study Session\n",
+                f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n",
+                "\n## Study Content\n"
+            ]
+            
+            if hasattr(self, 'current_verse'):
+                content.extend([
+                    "\n### Daily Verse\n",
+                    f"> {self.current_verse.text}\n",
+                    f"*— {self.current_verse.reference} ({self.current_verse.translation})*\n"
+                ])
+            
+            if hasattr(self, 'current_session'):
+                if self.current_session.teachings:
+                    content.extend([
+                        "\n### Teachings\n",
+                        *[f"#### {t['topic']}\n{t['teaching']}\n" 
+                          for t in self.current_session.teachings]
+                    ])
+                    
+                if self.current_session.searches:
+                    content.extend([
+                        "\n### Search Results\n",
+                        *[f"#### Query: {s['query']}\n{s['insights']}\n" 
+                          for s in self.current_session.searches]
+                    ])
+            
+            # Write content to file
+            with open(export_path, 'w', encoding='utf-8') as f:
+                f.writelines(content)
+                
+            print(self.console_formatter.format_export_success(str(export_path)))
+            return str(export_path)
+            
+        except Exception as e:
+            logging.error(f"Export failed: {str(e)}")
+            raise

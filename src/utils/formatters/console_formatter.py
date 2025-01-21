@@ -109,3 +109,17 @@ class ConsoleFormatter:
 ╚{'═' * 60}╝{Style.RESET_ALL}"""
 
         return f"{header}{passage}\n{content}\n{footer}"
+
+    def format_export_success(self, filepath: str) -> str:
+        """Format export success message"""
+        return f"""
+{Fore.CYAN}╔{'═' * 60}╗
+║{' ' * 26}EXPORT SUCCESS{' ' * 22}║
+╚{'═' * 60}╝{Style.RESET_ALL}
+
+{Fore.GREEN}✅ Study session exported successfully!{Style.RESET_ALL}
+
+{Fore.YELLOW}📁 Location:{Style.RESET_ALL} {filepath}
+
+{Fore.BLUE}Open the file to view your study session in Markdown format.{Style.RESET_ALL}
+"""
