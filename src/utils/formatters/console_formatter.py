@@ -1,6 +1,6 @@
-from colorama import init, Fore, Style
+from colorama import init, Fore, Style, Back
 from typing import Dict, Any
-
+import textwrap
 
 init()
 
@@ -13,16 +13,41 @@ class ConsoleFormatter:
             f"\n{Fore.YELLOW}— {verse_data['reference']} ({verse_data['translation']}){Style.RESET_ALL}\n"
         )
 
-    def format_teaching(self, teaching: Dict[str, Any]) -> str:
-        if not teaching or 'teaching' not in teaching:
-            return f"{Fore.RED}No teaching content available{Style.RESET_ALL}"
+    def format_teaching(self, teaching_data: Dict) -> str:
+        # Create styled header
+        header = f"""
+{Fore.CYAN}╔{'═' * 60}╗
+║{' ' * 24}BIBLICAL TEACHING{' ' * 23}║
+╚{'═' * 60}╝{Style.RESET_ALL}"""
 
-        return (
-            f"\n{Fore.CYAN}🎯 Biblical Teaching: {teaching['topic']}{Style.RESET_ALL}\n\n"
-            f"{teaching['teaching']}\n\n"
-            f"{Fore.BLUE}Generated using {teaching['model_used']} "
-            f"at {teaching['timestamp']}{Style.RESET_ALL}\n"
-        )
+        # Format topic
+        topic = f"\n{Fore.YELLOW}📚 Topic: {teaching_data['topic'].upper()}{Style.RESET_ALL}\n"
+
+        # Process and format content with proper wrapping
+        content = teaching_data['teaching']
+        wrapped_content = []
+        
+        # Split content into paragraphs
+        paragraphs = content.split('\n\n')
+        for para in paragraphs:
+            # Wrap text to 70 characters
+            wrapped = textwrap.fill(para.strip(), width=70)
+            # Add proper indentation and styling
+            wrapped = f"{Fore.WHITE}{wrapped}{Style.RESET_ALL}"
+            wrapped_content.append(wrapped)
+
+        # Join paragraphs with decorative separators
+        separator = f"\n{Fore.BLUE}• ─────────────────────── •{Style.RESET_ALL}\n"
+        formatted_content = separator.join(wrapped_content)
+
+        # Add footer with metadata
+        footer = f"""
+{Fore.CYAN}╔{'═' * 60}╗
+║{' ' * 15}Generated using {teaching_data['model_used']}{' ' * 15}║
+╚{'═' * 60}╝{Style.RESET_ALL}"""
+
+        # Combine all elements
+        return f"{header}{topic}\n{formatted_content}\n{footer}"
 
     def format_search_results(self, search_data: Dict[str, Any]) -> str:
         if not search_data or 'results' not in search_data:
