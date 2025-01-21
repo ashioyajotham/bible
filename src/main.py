@@ -7,9 +7,30 @@ from utils.helpers import setup_logging, create_export_filename
 
 def main():
     parser = argparse.ArgumentParser(description="Bible Study AI Agent")
-    parser.add_argument('--interactive', action='store_true', help='Start interactive mode')
-    parser.add_argument('--verse', action='store_true', help='Get daily verse')
-    parser.add_argument('--debug', action='store_true', help='Enable debug logging')
+    
+    # Interactive mode
+    parser.add_argument('--interactive', '-i', 
+                       action='store_true', 
+                       help='Start interactive mode')
+    
+    # Daily verse
+    parser.add_argument('--verse', '-v', 
+                       action='store_true', 
+                       help='Get daily verse')
+    
+    # Teachings
+    parser.add_argument('--teach', '-t',
+                          help='Get teachings on a topic')
+    
+    # Search
+    parser.add_argument('--search', '-s',
+                            help='Search for biblical insights')
+    
+    # Debug mode
+    parser.add_argument('--debug', '-d', 
+                       action='store_true', 
+                       help='Enable debug logging')
+    
     args = parser.parse_args()
 
     # Setup logging based on debug flag
@@ -39,6 +60,9 @@ def handle_interactive_mode(agent: BibleAgent):
             
             if command == 'quit':
                 break
+            elif command == 'export':
+                filename = input("Enter filename (optional): ").strip()
+                agent.export_study_session(filename if filename else None)
             elif command == 'teach':
                 topic = input("Enter topic: ")
                 agent.get_teachings(topic)  # Don't print return value

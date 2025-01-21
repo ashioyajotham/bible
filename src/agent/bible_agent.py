@@ -13,6 +13,8 @@ from services.llm.hf_llm import HuggingFaceLLM
 from services.llm.model_selector import ModelSelector, ModelType, TaskType
 from typing import Dict, List, Optional, Any
 
+from colorama import init, Fore, Style
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -415,6 +417,51 @@ class BibleAgent(BaseAgent):
         except Exception as e:
             logging.error(f"Failed to analyze passage: {str(e)}")
             raise
+
+    def export_study_session(self, filename: str = None) -> None:
+        """Export current study session to markdown file"""
+        try:
+            # Gather study content
+            content = {}
+            
+            # Get daily verse
+            verse = self._fetch_daily_verse()
+            if verse:
+                content['verse'] = {
+                    'text': verse.text,
+                    'reference': verse.reference,
+                    'translation': verse.translation
+                }
+            
+            # Get a teaching on love as example
+            teachings = self.get_teachings("love")
+            if teachings:
+                content['teaching'] = teachings
+            
+            # Get some biblical insights
+            search = self.search_biblical_insights("God's nature")
+            if search:
+                content['search_results'] = search
+            
+            # Generate filename if not provided
+            if not filename:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"bible_study_{timestamp}"
+            
+            # Ensure .md extension
+            if not filename.endswith('.md'):
+                filename += '.md'
+            
+            # Export to file
+            formatted_content = self.markdown_formatter.format_study_session(content)
+            with open(filename, 'w', encoding='utf-8') as f:
+                f.write(formatted_content)
+                
+            print(f"\n{Fore.GREEN}✅ Study session exported to: {filename}{Style.RESET_ALL}")
+            
+        except Exception as e:
+            logging.error(f"Error exporting study session: {str(e)}")
+            print(f"\n{Fore.RED}❌ Failed to export study session: {str(e)}{Style.RESET_ALL}")
 
 def handle_interactive_mode(agent: BibleAgent):
     """Handle interactive mode with command processing"""

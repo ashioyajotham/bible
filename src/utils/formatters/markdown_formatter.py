@@ -42,3 +42,35 @@ class MarkdownFormatter(BaseFormatter):
 *Generated at {results['timestamp']}*
 
 ---"""
+
+    def format_study_session(self, content: Dict[str, Any]) -> str:
+        output = [
+            "# 📚 Bible Study Session\n",
+            f"*Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n\n"
+        ]
+
+        if 'verse' in content:
+            output.extend([
+                "## 📖 Daily Verse\n\n",
+                f"> {content['verse']['text']}\n\n",
+                f"**Reference**: {content['verse']['reference']}  \n",
+                f"**Translation**: {content['verse']['translation']}\n\n"
+            ])
+
+        if 'teaching' in content:
+            output.extend([
+                f"## 🎯 Biblical Teaching: {content['teaching']['topic']}\n\n",
+                f"{content['teaching']['teaching']}\n\n"
+            ])
+
+        if 'search_results' in content:
+            output.extend([
+                f"## 🔍 Biblical Insights: {content['search_results']['query']}\n\n",
+                "### Analysis\n",
+                f"{content['search_results']['ai_analysis']}\n\n",
+                "### Sources\n",
+                *[f"- [{source['title']}]({source['link']})\n" 
+                  for source in content['search_results']['online_sources']]
+            ])
+
+        return "".join(output)
