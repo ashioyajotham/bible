@@ -92,14 +92,20 @@ class ConsoleFormatter:
 
         return f"{header}{query}\n{formatted_results}\n{footer}"
 
-    def format_analysis(self, analysis: Dict[str, Any]) -> str:
-        if not analysis or 'analysis' not in analysis:
-            return f"{Fore.RED}No analysis available{Style.RESET_ALL}"
+    def format_analysis(self, analysis_data: Dict) -> str:
+        """Format passage analysis with rich styling"""
+        header = f"""
+{Fore.CYAN}╔{'═' * 60}╗
+║{' ' * 24}PASSAGE ANALYSIS{' ' * 23}║
+╚{'═' * 60}╝{Style.RESET_ALL}"""
 
-        return (
-            f"\n{Fore.CYAN}📚 Biblical Analysis{Style.RESET_ALL}\n\n"
-            f"{Fore.YELLOW}Passage:{Style.RESET_ALL}\n{analysis['passage']}\n\n"
-            f"{Fore.GREEN}Analysis:{Style.RESET_ALL}\n{analysis['analysis']}\n\n"
-            f"{Fore.BLUE}Generated using {analysis['model_used']} "
-            f"at {analysis['timestamp']}{Style.RESET_ALL}\n"
-        )
+        passage = f"\n{Fore.YELLOW}📜 Passage: {analysis_data['passage']}{Style.RESET_ALL}\n"
+        
+        content = textwrap.fill(analysis_data['analysis'], width=70)
+        
+        footer = f"""
+{Fore.CYAN}╔{'═' * 60}╗
+║{' ' * 15}Analyzed using {analysis_data['model_used']}{' ' * 15}║
+╚{'═' * 60}╝{Style.RESET_ALL}"""
+
+        return f"{header}{passage}\n{content}\n{footer}"

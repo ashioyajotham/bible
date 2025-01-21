@@ -311,31 +311,40 @@ class BibleAgent(BaseAgent):
             f.write("# Bible Study Export\n\n")
 
     def search_biblical_insights(self, query: str) -> Dict[str, Any]:
-        """Search for biblical insights using SerperAPI"""
-        start_time = time.time()
+        """Enhanced search with Gemini insights"""
         try:
-            # Format search query
-            search_query = f"biblical meaning {query}"
-            logging.debug(f"Searching for: {search_query}")
+            # Get raw search results
+            raw_results = self.serper.search(query)
             
-            # Get search results
-            results = self.serper.search(search_query)
-            if not results:
-                raise Exception("No search results found")
+            # Use Gemini to enhance results
+            model = self.get_model(ModelType.GEMINI)
+            
+            enhanced_results = []
+            for result in raw_results:
+                prompt = f"""Based on this search result about "{query}":
+                {result['snippet']}
                 
-            # Format response
+                Provide:
+                1. Biblical perspective
+                2. Key spiritual insights
+                3. Relevant scripture references
+                """
+                
+                insight = model.generate(prompt)
+                result['enhanced_insight'] = insight
+                enhanced_results.append(result)
+            
             search_data = {
                 "query": query,
-                "results": results,
+                "results": enhanced_results,
                 "timestamp": datetime.now().isoformat()
             }
             
-            # Display results
             print(self.console_formatter.format_search_results(search_data))
             return search_data
             
         except Exception as e:
-            logging.error(f"Search error: {str(e)}")
+            logging.error(f"Search failed: {str(e)}")
             raise
 
     def _create_search_prompt(self, query: str) -> str:
@@ -346,77 +355,37 @@ class BibleAgent(BaseAgent):
         """
 
     def analyze_passage(self, passage: str) -> Dict[str, Any]:
-        """Analyze biblical passage using selected model"""
+        """Analyze biblical passage using Gemini"""
         start_time = time.time()
-        model = None
-        
         try:
-            context = {
-                'passage': passage,
-                'timestamp': datetime.now().isoformat(),
-                'type': 'analysis'
-            }
+            model = self.get_model(ModelType.GEMINI)
             
-            # Get initialized model
-            model = self.model_selector.select_and_get_model(
-                task=TaskType.ANALYSIS,
-                context=context
-            )
+            prompt = f"""Analyze this biblical passage:
+            {passage}
             
-            if not model:
-                raise Exception("Failed to initialize model for analysis")
-                
-            # Create analysis prompt
-            prompt = self._create_analysis_prompt(passage)
-            result = model.generate(prompt)
+            Provide:
+            1. Historical Context
+            2. Key Themes
+            3. Theological Significance
+            4. Practical Applications
+            5. Cross References
+            """
             
-            if not result:
-                raise Exception("No analysis generated")
-                
-            # Package response
+            analysis = model.generate(prompt)
+            
             analysis_data = {
                 "passage": passage,
-                "analysis": result,
-                "model_used": model.model_id,
+                "analysis": analysis,
+                "model_used": "gemini-pro",
                 "timestamp": datetime.now().isoformat()
             }
             
-            # Update metrics
-            if hasattr(model, 'model_type'):
-                self.model_selector.update_performance(
-                    model=model.model_type,
-                    success=True,
-                    latency=time.time() - start_time
-                )
-            
-            # Display results
             print(self.console_formatter.format_analysis(analysis_data))
             return analysis_data
             
         except Exception as e:
-            if model and hasattr(model, 'model_type'):
-                self.model_selector.update_performance(
-                    model=model.model_type,
-                    success=False,
-                    latency=time.time() - start_time
-                )
             logging.error(f"Analysis failed: {str(e)}")
             raise
-
-    def _create_analysis_prompt(self, passage: str) -> str:
-        """Create prompt for passage analysis"""
-        return f"""
-        Analyze the following biblical passage:
-        
-        {passage}
-        
-        Please provide:
-        1. Historical context
-        2. Key themes and messages
-        3. Theological significance
-        4. Practical applications
-        5. Related cross-references
-        """
 
     def suggest_related_verses(self, verse: Verse) -> List[Verse]:
         """Suggest related verses based on category and cross-references"""
