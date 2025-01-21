@@ -53,46 +53,59 @@ class ConsoleFormatter:
         return f"{header}{topic}\n{content}\n{footer}"
 
     def format_search_results(self, search_data: Dict) -> str:
-        """Format search results with rich styling and longer snippets"""
-        # Create styled header
+        """Format enhanced search results with rich styling"""
         header = f"""
-{Fore.CYAN}╔{'═' * 60}╗
-║{' ' * 25}SEARCH RESULTS{' ' * 24}║
-╚{'═' * 60}╝{Style.RESET_ALL}"""
+{Fore.CYAN}╔{'═' * 70}╗
+║ {'BIBLICAL INSIGHTS'.center(68)} ║
+╚{'═' * 70}╝{Style.RESET_ALL}"""
 
-        # Format query
         query = f"\n{Fore.YELLOW}🔍 Query: {search_data['query'].upper()}{Style.RESET_ALL}\n"
 
-        # Process results
-        results = []
-        for idx, result in enumerate(search_data['results'], 1):
-            # Format each result with more detailed content
-            result_block = f"""
-{Fore.GREEN}Result #{idx}{Style.RESET_ALL}
-{Fore.BLUE}{'─' * 60}{Style.RESET_ALL}
-{Fore.CYAN}Title:{Style.RESET_ALL} {result.get('title', 'No title')}
-
-{Fore.CYAN}Summary:{Style.RESET_ALL}
-{textwrap.fill(result.get('snippet', 'No description'), width=70)}
-
-{Fore.CYAN}Key Points:{Style.RESET_ALL}
-{textwrap.fill(result.get('description', result.get('snippet', '')), width=70)}
-
-{Fore.BLUE}Source:{Style.RESET_ALL} {result.get('link', 'No link available')}
+        # Format theological analysis
+        analysis = f"""
+{Fore.GREEN}📚 Theological Analysis{Style.RESET_ALL}
+{'─' * 70}
+{textwrap.fill(search_data['theological_analysis'], width=70)}
 """
-            results.append(result_block)
 
-        # Join results with decorative separator
-        separator = f"\n{Fore.BLUE}• {'═' * 58} •{Style.RESET_ALL}\n"
-        formatted_results = separator.join(results)
+        # Format spiritual reflection
+        reflection = f"""
+{Fore.GREEN}🙏 Spiritual Reflection{Style.RESET_ALL}
+{'─' * 70}
+{textwrap.fill(search_data['spiritual_reflection'], width=70)}
+"""
 
-        # Add footer with timestamp
+        # Format sources
+        sources = [f"""
+{Fore.BLUE}📖 Source {i+1}:{Style.RESET_ALL}
+{Fore.CYAN}Title:{Style.RESET_ALL} {source['title']}
+{Fore.CYAN}Summary:{Style.RESET_ALL} {textwrap.fill(source['summary'], width=70)}
+{Fore.CYAN}Link:{Style.RESET_ALL} {source['link']}
+""" for i, source in enumerate(search_data['sources'])]
+
         footer = f"""
-{Fore.CYAN}╔{'═' * 60}╗
-║{' ' * 15}Search completed at {datetime.now().strftime('%H:%M:%S')}{' ' * 15}║
-╚{'═' * 60}╝{Style.RESET_ALL}"""
+{Fore.CYAN}╔{'═' * 70}╗
+║ {'Generated with Gemini'.center(68)} ║
+╚{'═' * 70}╝{Style.RESET_ALL}
+"""
 
-        return f"{header}{query}\n{formatted_results}\n{footer}"
+        return f"{header}{query}{analysis}{reflection}{''.join(sources)}{footer}"
+
+    def format_reflection(self, reflection_data: Dict) -> str:
+        """Format spiritual reflection"""
+        header = self._create_header("SPIRITUAL REFLECTION")
+        
+        content = (
+            f"{Fore.YELLOW}💭 Personal Application{Style.RESET_ALL}\n"
+            f"{textwrap.fill(reflection_data['application'], width=70)}\n\n"
+            f"{Fore.YELLOW}🙏 Prayer Points{Style.RESET_ALL}\n"
+            f"{textwrap.fill(reflection_data['prayer_points'], width=70)}\n\n"
+            f"{Fore.YELLOW}📖 Meditation Verses{Style.RESET_ALL}\n"
+            f"{textwrap.fill(reflection_data['meditation_verses'], width=70)}"
+        )
+        
+        footer = self._create_footer("May these insights guide your walk")
+        return f"{header}\n\n{content}\n\n{footer}"
 
     def format_analysis(self, analysis_data: Dict) -> str:
         """Format passage analysis with rich styling"""
@@ -123,5 +136,27 @@ class ConsoleFormatter:
 
 {Fore.YELLOW}📁 Location:{Style.RESET_ALL} {filepath}
 
-{Fore.BLUE}Open the file to view your study session in Markdown format.{Style.RESET_ALL}
-"""
+{Fore.BLUE}Open the file to view your study session in Markdown format.{Style.RESET_ALL}"""
+
+    def format_help(self) -> str:
+        """Format help message with commands and shortcuts"""
+        commands = {
+            'search (s)': 'Search biblical content and get analysis',
+            'teach (t)': 'Get biblical teaching on a topic',
+            'verse (v)': 'Get daily verse with reflection',
+            'reflect (r)': 'Reflect on recent search/study',
+            'export (e)': 'Export study session',
+            'help (h)': 'Show this help message',
+            'exit (q)': 'Exit the application'
+        }
+        
+        header = f"""
+{Fore.CYAN}╔{'═' * 70}╗
+║ {'AVAILABLE COMMANDS'.center(68)} ║
+╚{'═' * 70}╝{Style.RESET_ALL}"""
+
+        content = []
+        for cmd, desc in commands.items():
+            content.append(f"{Fore.YELLOW}{cmd:<15}{Style.RESET_ALL} - {desc}")
+
+        return f"{header}\n\n" + "\n".join(content)

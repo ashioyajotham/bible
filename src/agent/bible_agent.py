@@ -13,8 +13,10 @@ from services.llm.hf_llm import HuggingFaceLLM
 from services.llm.model_selector import ModelSelector, ModelType, TaskType
 from typing import Dict, List, Optional, Any
 from models.verse_categories import VerseCategory, VerseCatalog
+from .search_agent import SearchAgent
 
 from colorama import init, Fore, Style
+
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -84,6 +86,7 @@ class BibleAgent(BaseAgent):
         self.markdown_formatter = MarkdownFormatter()
         self.console_formatter = ConsoleFormatter()
         self.verse_history = []
+        self.search_agent = SearchAgent()
 
     def _initialize_goals(self):
         """Initialize agent goals"""
@@ -454,3 +457,100 @@ class BibleAgent(BaseAgent):
         except Exception as e:
             logging.error(f"Export failed: {str(e)}")
             raise
+
+    def search_with_analysis(self, query: str) -> Dict:
+        """Enhanced search with theological analysis"""
+        search_agent = SearchAgent()
+        
+        # Get search results with analysis
+        results = search_agent.search_and_analyze(query)
+        
+        # Generate reflection
+        reflection = search_agent.reflect_on_results(results)
+        
+        # Extract biblical references
+        references = search_agent._find_biblical_references(
+            results["theological_analysis"]
+        )
+        
+        # Get key points
+        key_points = search_agent._extract_key_points(
+            results["theological_analysis"]
+        )
+        
+        enhanced_results = {
+            **results,
+            "reflection": reflection,
+            "biblical_references": references,
+            "key_points": key_points
+        }
+        
+        # Store in session
+        if hasattr(self, 'current_session'):
+            self.current_session.searches.append(enhanced_results)
+        
+        print(self.console_formatter.format_search_results(enhanced_results))
+        return enhanced_results
+
+    def generate_reflection(self, topic: str) -> Dict:
+        """Generate spiritual reflection on a topic"""
+        search_agent = SearchAgent()
+        
+        # Get initial search results
+        results = search_agent.search_and_analyze(topic)
+        
+        # Generate reflection
+        reflection = search_agent.reflect_on_results(results)
+        
+        # Extract biblical references
+        references = search_agent._find_biblical_references(
+            results["theological_analysis"]
+        )
+        
+        # Get key points
+        key_points = search_agent._extract_key_points(
+            results["theological_analysis"]
+        )
+        
+        enhanced_results = {
+            **results,
+            "reflection": reflection,
+            "biblical_references": references,
+            "key_points": key_points
+        }
+        
+        # Store in session
+        if hasattr(self, 'current_session'):
+            self.current_session.searches.append(enhanced_results)
+        
+        print(self.console_formatter.format_search_results(enhanced_results))
+        return enhanced_results
+
+    def process_command(self, command: str, *args) -> None:
+        try:
+            if command == "search":
+                query = input("Enter search query: ")
+                results = self.search_agent.search_and_analyze(query)
+                points = self.search_agent._extract_key_points(results['theological_analysis'])
+                refs = self.search_agent._find_biblical_references(results['theological_analysis'])
+                
+                self.current_session.add_search({
+                    "query": query,
+                    "results": results,
+                    "key_points": points,
+                    "references": refs,
+                    "reflection": self.search_agent.reflect_on_results(results)
+                })
+                
+                print(self.console_formatter.format_search_results(results))
+                
+            elif command == "reflect":
+                if not self.current_session.searches:
+                    print("No search results to reflect on. Try searching first.")
+                    return
+                    
+                latest_search = self.current_session.searches[-1]
+                reflection = self.search_agent.reflect_on_results(latest_search)
+                print(self.console_formatter.format_reflection(reflection))
+                
+            # ...existing commands...
