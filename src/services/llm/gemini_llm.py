@@ -1,11 +1,20 @@
+from .model_types import ModelType
 import google.generativeai as genai
-from typing import Optional
 import logging
+from typing import Optional
 
 class GeminiLLM:
     def __init__(self, api_key: str):
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-pro')
+        try:
+            self.model_type = ModelType.GEMINI  # Add model type
+            self.model_id = "gemini-pro"
+            genai.configure(api_key=api_key)
+            self.model = genai.GenerativeModel('gemini-pro')
+            logging.info(f"Initialized {self.model_id}")
+            
+        except Exception as e:
+            logging.error(f"Failed to initialize Gemini: {str(e)}")
+            raise
         
     def generate(self, prompt: str) -> Optional[str]:
         try:
