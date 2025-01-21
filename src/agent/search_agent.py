@@ -12,51 +12,44 @@ class SearchAgent:
         self.cache = {}
 
     def search_and_analyze(self, query: str) -> Dict:
-        """Enhanced biblical search with Gemini analysis"""
+        """Enhanced biblical search with full analysis"""
         try:
             # Get raw search results
             raw_results = self.serper.search(query)
-
-            # Generate overall summary using Gemini
-            summary_prompt = f"""Provide a biblical perspective on: {query}
-            Based on these search results:
-            {[result.get('snippet', '') for result in raw_results[:3]]}
+            
+            # Generate theological analysis using Gemini
+            analysis_prompt = f"""Provide a biblical analysis of: {query}
+            Based on these sources: {[r.get('snippet', '') for r in raw_results[:3]]}
             
             Include:
-            1. Key theological insights
-            2. Biblical principles
-            3. Relevant scripture references
-            4. Practical applications
+            1. Biblical perspective
+            2. Theological insights
+            3. Key teachings
+            4. Scriptural foundation
             """
-            overall_summary = self.gemini.generate(summary_prompt)
-
-            # Enhance each result with Gemini analysis
-            enhanced_results = []
-            for result in raw_results[:5]:  # Process top 5 results
-                analysis_prompt = f"""Analyze this content from a biblical perspective:
-                {result.get('snippet', '')}
-                
-                Provide:
-                1. Main spiritual points
-                2. Connection to scripture
-                3. Application for Christian life
-                """
-                theological_analysis = self.gemini.generate(analysis_prompt)
-                
-                enhanced_results.append({
-                    'title': result.get('title', ''),
-                    'link': result.get('link', ''),
-                    'snippet': result.get('snippet', ''),
-                    'analysis': theological_analysis
-                })
-
+            theological_analysis = self.gemini.generate(analysis_prompt)
+            
+            # Extract key points
+            key_points = self._extract_key_points(theological_analysis)
+            
+            # Find biblical references
+            references = self._find_biblical_references(theological_analysis)
+            
+            # Generate reflection
+            reflection = self.reflect_on_results({
+                'query': query,
+                'analysis': theological_analysis
+            })
+            
             return {
                 "query": query,
-                "summary": overall_summary,
-                "results": enhanced_results,
-                "timestamp": datetime.now().isoformat()
+                "theological_analysis": theological_analysis,
+                "key_points": key_points,
+                "references": references,
+                "reflection": reflection,
+                "sources": raw_results[:3]
             }
-
+            
         except Exception as e:
             logging.error(f"Search and analysis failed: {str(e)}")
             raise

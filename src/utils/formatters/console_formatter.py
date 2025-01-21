@@ -1,5 +1,5 @@
 from colorama import init, Fore, Style, Back
-from typing import Dict, Any
+from typing import Dict, Any, List
 import textwrap
 from datetime import datetime
 
@@ -53,43 +53,41 @@ class ConsoleFormatter:
         return f"{header}{topic}\n{content}\n{footer}"
 
     def format_search_results(self, search_data: Dict) -> str:
-        """Format enhanced search results with rich styling"""
+        """Format complete search results with analysis"""
         header = f"""
 {Fore.CYAN}╔{'═' * 70}╗
 ║ {'BIBLICAL INSIGHTS'.center(68)} ║
 ╚{'═' * 70}╝{Style.RESET_ALL}"""
 
-        query = f"\n{Fore.YELLOW}🔍 Query: {search_data['query'].upper()}{Style.RESET_ALL}\n"
+        sections = [
+            (f"{Fore.YELLOW}🔍 SEARCH QUERY", search_data['query'].upper()),
+            (f"{Fore.GREEN}📚 THEOLOGICAL ANALYSIS", search_data['theological_analysis']),
+            (f"{Fore.BLUE}📝 KEY POINTS", "\n".join(f"• {point}" for point in search_data['key_points'])),
+            (f"{Fore.MAGENTA}✝️ BIBLICAL REFERENCES", "\n".join(f"• {ref}" for ref in search_data['references'])),
+            (f"{Fore.CYAN}🙏 SPIRITUAL REFLECTION", search_data['reflection']),
+            (f"{Fore.WHITE}📖 SOURCES", self._format_sources(search_data['sources']))
+        ]
 
-        # Format theological analysis
-        analysis = f"""
-{Fore.GREEN}📚 Theological Analysis{Style.RESET_ALL}
-{'─' * 70}
-{textwrap.fill(search_data['theological_analysis'], width=70)}
-"""
-
-        # Format spiritual reflection
-        reflection = f"""
-{Fore.GREEN}🙏 Spiritual Reflection{Style.RESET_ALL}
-{'─' * 70}
-{textwrap.fill(search_data['spiritual_reflection'], width=70)}
-"""
-
-        # Format sources
-        sources = [f"""
-{Fore.BLUE}📖 Source {i+1}:{Style.RESET_ALL}
-{Fore.CYAN}Title:{Style.RESET_ALL} {source['title']}
-{Fore.CYAN}Summary:{Style.RESET_ALL} {textwrap.fill(source['summary'], width=70)}
-{Fore.CYAN}Link:{Style.RESET_ALL} {source['link']}
-""" for i, source in enumerate(search_data['sources'])]
+        content = "\n\n".join(
+            f"{title}{Style.RESET_ALL}\n{'─' * 70}\n{content}"
+            for title, content in sections
+        )
 
         footer = f"""
 {Fore.CYAN}╔{'═' * 70}╗
-║ {'Generated with Gemini'.center(68)} ║
-╚{'═' * 70}╝{Style.RESET_ALL}
-"""
+║ {'Generated with Biblical Analysis'.center(68)} ║
+╚{'═' * 70}╝{Style.RESET_ALL}"""
 
-        return f"{header}{query}{analysis}{reflection}{''.join(sources)}{footer}"
+        return f"{header}\n\n{content}\n\n{footer}"
+
+    def _format_sources(self, sources: List[Dict]) -> str:
+        """Format source references"""
+        return "\n\n".join(
+            f"Source {i+1}:\n"
+            f"Title: {source.get('title', 'N/A')}\n"
+            f"Link: {source.get('link', 'N/A')}"
+            for i, source in enumerate(sources)
+        )
 
     def format_reflection(self, reflection_data: Dict) -> str:
         """Format spiritual reflection"""

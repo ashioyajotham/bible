@@ -527,24 +527,25 @@ class BibleAgent(BaseAgent):
         return enhanced_results
 
     def process_command(self, command: str, *args) -> None:
+        """Process user commands with enhanced error handling"""
         try:
-            if command == "search":
+            if command == "search" or command == "s":
                 query = input("Enter search query: ")
                 results = self.search_agent.search_and_analyze(query)
-                points = self.search_agent._extract_key_points(results['theological_analysis'])
+                key_points = self.search_agent._extract_key_points(results['theological_analysis'])
                 refs = self.search_agent._find_biblical_references(results['theological_analysis'])
                 
                 self.current_session.add_search({
                     "query": query,
                     "results": results,
-                    "key_points": points,
+                    "key_points": key_points,
                     "references": refs,
                     "reflection": self.search_agent.reflect_on_results(results)
                 })
                 
                 print(self.console_formatter.format_search_results(results))
                 
-            elif command == "reflect":
+            elif command == "reflect" or command == "r":
                 if not self.current_session.searches:
                     print("No search results to reflect on. Try searching first.")
                     return
@@ -553,4 +554,28 @@ class BibleAgent(BaseAgent):
                 reflection = self.search_agent.reflect_on_results(latest_search)
                 print(self.console_formatter.format_reflection(reflection))
                 
-            # ...existing commands...
+            elif command == "verse" or command == "v":
+                self.get_daily_verse()
+                
+            elif command == "teach" or command == "t":
+                topic = input("Enter topic: ")
+                self.teach_biblical_topic(topic)
+                
+            elif command == "export" or command == "e":
+                filename = input("Enter filename (optional): ")
+                self.export_study_session(filename)
+                
+            elif command == "help" or command == "h":
+                print(self.console_formatter.format_help())
+                
+            elif command == "exit" or command == "q":
+                print("Goodbye! God bless.")
+                exit(0)
+                
+            else:
+                print(f"Unknown command: {command}")
+                print(self.console_formatter.format_help())
+                
+        except Exception as e:
+            logging.error(f"Error processing command {command}: {str(e)}")
+            raise
