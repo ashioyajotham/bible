@@ -31,31 +31,33 @@ import numpy as np
 
 class BibleAgent(BaseAgent):
     def __init__(self):
-        logging.debug("Initializing BibleAgent")
         try:
+            logging.debug("Initializing BibleAgent")
             super().__init__()
+            
+            # Initialize formatters and models
             self.console_formatter = ConsoleFormatter()
             self.model_selector = ModelSelector()
             self._models = {}
             self.current_model_type = ModelType.GEMINI
             
-            # Initialize verse system
-            self.verse_catalog = VerseCatalog()
+            # Initialize verse preferences
             self.verse_preferences = {
-                "preferred_translations": ["ESV", "NIV", "KJV"],
+                "preferred_translations": ["ESV"],
                 "categories": [
                     VerseCategory.WISDOM,
                     VerseCategory.ENCOURAGEMENT,
-                    VerseCategory.FAITH
+                    VerseCategory.FAITH,
+                    VerseCategory.PROMISES
                 ],
                 "review_interval_days": 7
             }
             
-            self._initialize_goals()
-            self._initialize_daily_verses()
+            # Ensure StudySession is properly initialized
+            self.current_session = StudySession() 
             
-            # Add session tracking
-            self.current_session = StudySession()
+            # Initialize search agent
+            self.search_agent = SearchAgent()
             
         except Exception as e:
             logging.error(f"Failed to initialize BibleAgent: {str(e)}")
@@ -460,37 +462,41 @@ class BibleAgent(BaseAgent):
 
     def search_with_analysis(self, query: str) -> Dict:
         """Enhanced search with theological analysis"""
-        search_agent = SearchAgent()
+        start_time = time.time()
+        model = None
         
-        # Get search results with analysis
-        results = search_agent.search_and_analyze(query)
-        
-        # Generate reflection
-        reflection = search_agent.reflect_on_results(results)
-        
-        # Extract biblical references
-        references = search_agent._find_biblical_references(
-            results["theological_analysis"]
-        )
-        
-        # Get key points
-        key_points = search_agent._extract_key_points(
-            results["theological_analysis"]
-        )
-        
-        enhanced_results = {
-            **results,
-            "reflection": reflection,
-            "biblical_references": references,
-            "key_points": key_points
-        }
-        
-        # Store in session
-        if hasattr(self, 'current_session'):
-            self.current_session.searches.append(enhanced_results)
-        
-        print(self.console_formatter.format_search_results(enhanced_results))
-        return enhanced_results
+        try:
+            # Get search results and analysis
+            search_data = self.search_agent.search_and_analyze(query)
+            
+            if not search_data:
+                raise Exception("Failed to get search results")
+                
+            # Track model performance
+            if model := self.get_model(self.current_model_type):
+                self.model_selector.update_performance(
+                    model=model.model_type,
+                    success=True,
+                    latency=time.time() - start_time
+                )
+                
+            # Add to session
+            if hasattr(self, 'current_session'):
+                self.current_session.add_search(search_data)
+                
+            # Format and display results
+            print(self.console_formatter.format_search_results(search_data))
+            return search_data
+            
+        except Exception as e:
+            if model:
+                self.model_selector.update_performance(
+                    model=model.model_type,
+                    success=False,
+                    latency=time.time() - start_time
+                )
+            logging.error(f"Search failed: {str(e)}")
+            return None
 
     def generate_reflection(self, topic: str) -> Dict:
         """Generate spiritual reflection on a topic"""
@@ -579,3 +585,45 @@ class BibleAgent(BaseAgent):
         except Exception as e:
             logging.error(f"Error processing command {command}: {str(e)}")
             raise
+
+    def teach_biblical_topic(self, topic: str) -> Optional[Dict]:
+        """Generate biblical teaching with enhanced response handling"""
+        start_time = time.time()
+        model = None
+        
+        try:
+            context = {'topic': topic, 'timestamp': datetime.now().isoformat()}
+            
+            # Get initialized model
+            model = self.model_selector.select_and_get_model(
+                task=TaskType.TEACHING,
+                context=context
+            )
+            
+            if not model:
+                raise Exception("Failed to initialize model")
+            
+            # Generate content with response validation
+            response = model.generate(self._create_teaching_prompt(topic))
+            if not response:
+                raise Exception("No content generated")
+                
+            # Structure the teaching data
+            teaching_data = {
+                "topic": topic,
+                "teaching": response,
+                "model_used": str(self.current_model_type),
+                "generation_time": time.time() - start_time
+            }
+            
+            # Add to session
+            if hasattr(self, 'current_session'):
+                self.current_session.add_teaching(teaching_data)
+            
+            # Format and display
+            print(self.console_formatter.format_teaching(teaching_data))
+            return teaching_data
+            
+        except Exception as e:
+            logging.error(f"Teaching generation failed: {str(e)}")
+            return None

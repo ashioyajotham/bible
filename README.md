@@ -2,158 +2,147 @@
 
 An intelligent agent system for biblical study and analysis, combining modern AI with scriptural wisdom.
 
-## Architecture
+## 🌟 Key Features
+
+- **Interactive Study Mode**: Engage in dynamic Bible study sessions with natural language interactions
+- **Intelligent Search**: Advanced biblical search with theological analysis and cross-references
+- **Daily Verses**: AI-curated daily verses with contextual insights
+- **Spiritual Reflections**: Generate meaningful reflections on biblical passages
+- **Teaching Generation**: Get in-depth teachings on biblical topics
+- **Multi-Model Support**: Leverages both Google's Gemini and Hugging Face models
+- **Export Capabilities**: Save study sessions in beautifully formatted Markdown
+- **Smart Model Selection**: Automatic model selection based on task requirements
+
+## 🏗️ Architecture
 
 ```mermaid
-graph TD
-    A[Bible Agent] --> B[Model Selector]
-    A --> C[Goal System]
-    A --> D[Tools]
-    A --> E[Formatters]
+graph TB
+    User([User]) --> CLI[Command Line Interface]
+    CLI --> BA[Bible Agent]
     
-    B --> F[Gemini LLM]
-    B --> G[HuggingFace LLM]
+    subgraph "Core Components"
+        BA --> MS[Model Selector]
+        BA --> SA[Search Agent]
+        BA --> SS[Study Session]
+        
+        MS --> GM[Gemini Model]
+        MS --> HF[HuggingFace Model]
+        
+        SA --> SP[Serper Service]
+        SA --> MA[Model Analysis]
+    end
     
-    D --> H[Search]
-    D --> I[Reflect]
-    D --> J[Verse]
-    D --> K[Teach]
-    D --> L[Analyze]
+    subgraph "Features"
+        BA --> VS[Verse Service]
+        BA --> TS[Teaching Service]
+        BA --> RS[Reflection Service]
+        BA --> AS[Analysis Service]
+    end
     
-    E --> M[Markdown Formatter]
-    E --> N[Console Formatter]
-    
-    C --> O[Goals]
-    O --> P[Primary Goals]
-    O --> Q[Secondary Goals]
+    subgraph "Utils & Formatting"
+        BA --> CF[Console Formatter]
+        BA --> MF[Markdown Formatter]
+        SS --> EX[Export System]
+    end
 ```
 
-## Features
+## 🔧 Technical Components
 
-- 🤖 **Intelligent Model Selection**: Dynamically chooses between Gemini and HuggingFace models
-- 📖 **Daily Verse Generation**: Provides daily biblical verses with fallback mechanisms
-- 🔍 **Biblical Search**: Combined AI and online source analysis
-- 📚 **Teaching Generation**: Topic-specific biblical teachings
-- 💭 **Passage Analysis**: Deep scriptural analysis with context and interpretations
-- 📝 **Multiple Output Formats**: Console and Markdown formatting support
-- 🎯 **Goal-Oriented System**: Prioritized goal system for focused interactions
-- 💾 **Memory System**: Learns from past interactions
+- **Agent System**
+  - `BibleAgent`: Core orchestrator for all functionalities
+  - `SearchAgent`: Handles biblical search and analysis
+  - `ModelSelector`: Smart model selection based on task
+  
+- **Models & Services**
+  - Google Gemini Integration
+  - HuggingFace Models Support
+  - Serper API Integration
+  - ESV Bible API Integration
 
-## Installation
+- **Session Management**
+  - Study Session Tracking
+  - Progress Persistence
+  - Export Capabilities
 
-1. Clone the repository:
+## 🚀 Getting Started
+
+1. **Clone the repository**
 ```bash
-git clone https://github.com/ashioyajotham/bible-study-agent.git
-cd bible-study-agent
+git clone https://github.com/yourusername/bible-study-ai.git
+cd bible-study-ai
 ```
 
-2. Create and activate virtual environment:
+2. **Set up environment**
 ```bash
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# or
-venv\Scripts\activate  # Windows
-```
-
-3. Install dependencies:
-```bash
+source venv/bin/activate  # or `venv\Scripts\activate` on Windows
 pip install -r requirements.txt
 ```
 
-4. Set up environment variables:
-```bash
-cp .env.example .env
-```
-
-Edit `.env` file with your API keys:
-```
-SERPER_API_KEY=your_serper_key
+3. **Configure API keys**
+Create a `.env` file:
+```env
 GEMINI_API_KEY=your_gemini_key
-HF_MODEL_ID=your_huggingface_model
+SERPER_API_KEY=your_serper_key
+ESV_API_KEY=your_esv_key
+HF_API_KEY=your_huggingface_key
 ```
 
-## Usage
+4. **Run the application**
+```bash
+python src/main.py --interactive
+```
+
+## 💻 Usage Examples
 
 ### Interactive Mode
-```python
-from agent.bible_agent import BibleAgent, handle_interactive_mode
-
-agent = BibleAgent()
-handle_interactive_mode(agent)
+```bash
+python src/main.py -i
 ```
 
-### Available Commands
-- `verse`: Get daily Bible verse
-- `teach`: Get teachings on a specific topic
-- `search`: Search for biblical insights
-- `export`: Export study content to Markdown
-- `quit`: Exit interactive mode
-
-### Code Examples
-
-```python
-# Initialize agent
-agent = BibleAgent()
-
-# Get daily verse
-verse = agent.get_daily_verse()
-
-# Get teachings on a topic
-teachings = agent.get_teachings("love")
-
-# Search biblical insights
-insights = agent.search_biblical_insights("forgiveness")
-
-# Analyze a passage
-analysis = agent.analyze_passage("John 3:16")
-
-# Export to markdown
-agent.export_to_markdown(
-    {"verse": verse, "teaching": teachings}, 
-    "study_notes"
-)
+### Get Daily Verse
+```bash
+python src/main.py --verse
 ```
 
-## Project Structure
-
-```
-bible-study-agent/
-├── src/
-│   ├── agent/
-│   │   ├── bible_agent.py
-│   │   ├── base_agent.py
-│   │   └── components/
-│   │       └── goal_system.py
-│   ├── services/
-│   │   ├── llm/
-│   │   │   ├── gemini_llm.py
-│   │   │   ├── hf_llm.py
-│   │   │   └── model_selector.py
-│   │   └── serper_service.py
-│   ├── utils/
-│   │   └── formatters/
-│   │       ├── markdown_formatter.py
-│   │       └── console_formatter.py
-│   └── models/
-│       └── verse.py
-├── config/
-│   └── settings.py
-└── requirements.txt
+### Search Biblical Topics
+```bash
+python src/main.py --search "love your neighbor"
 ```
 
-## Dependencies
+### Generate Teaching
+```bash
+python src/main.py --teach "forgiveness"
+```
 
-- Python 3.8+
-- Google Gemini API
-- HuggingFace Transformers
-- Serper API
-- requests
-- python-dotenv
+## 🔍 Command Reference
 
-## Contributing
+- `search (s)`: Search and analyze biblical topics
+- `teach (t)`: Get biblical teaching on a topic
+- `verse (v)`: Get daily verse with reflection
+- `reflect (r)`: Reflect on recent study
+- `analyze (a)`: Analyze biblical passage
+- `export (e)`: Export study session
+- `help (h)`: Show help message
+- `quit (q)`: Exit application
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+## 🛠️ Development
 
-## License
+The project uses a modular architecture with clear separation of concerns:
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+- `src/agent/`: Core agent implementations
+- `src/models/`: Data models and structures
+- `src/services/`: External service integrations
+- `src/utils/`: Helper utilities and formatters
+
+## 📜 License
+
+MIT License - See LICENSE file for details
+
+## 🤝 Contributing
+
+Contributions are welcome! Please read our contributing guidelines and submit pull requests.
+
+## ⚠️ Note
+
+This is an AI assistant tool meant to aid in Bible study, not replace traditional study methods or spiritual guidance.
