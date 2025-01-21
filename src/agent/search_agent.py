@@ -17,37 +17,44 @@ class SearchAgent:
             # Get raw search results
             raw_results = self.serper.search(query)
             
-            # Generate theological analysis using Gemini
-            analysis_prompt = f"""Provide a biblical analysis of: {query}
-            Based on these sources: {[r.get('snippet', '') for r in raw_results[:3]]}
+            # Generate theological analysis
+            theological_prompt = f"""Analyze this topic biblically: {query}
+            Based on: {[r.get('snippet', '') for r in raw_results[:3]]}
             
-            Include:
+            Provide:
             1. Biblical perspective
-            2. Theological insights
-            3. Key teachings
-            4. Scriptural foundation
+            2. Key principles
+            3. Scripture foundation
+            4. Practical application
             """
-            theological_analysis = self.gemini.generate(analysis_prompt)
             
-            # Extract key points
-            key_points = self._extract_key_points(theological_analysis)
-            
-            # Find biblical references
-            references = self._find_biblical_references(theological_analysis)
+            analysis = self.gemini.generate(theological_prompt)
+            key_points = self._extract_key_points(analysis)
+            references = self._find_biblical_references(analysis)
             
             # Generate reflection
-            reflection = self.reflect_on_results({
-                'query': query,
-                'analysis': theological_analysis
-            })
+            reflection_prompt = f"""Reflect spiritually on: {query}
+            Based on: {analysis}
+            
+            Include:
+            1. Personal application
+            2. Prayer points
+            3. Meditation focus
+            """
+            
+            reflection = self.gemini.generate(reflection_prompt)
             
             return {
                 "query": query,
-                "theological_analysis": theological_analysis,
+                "theological_analysis": analysis,
                 "key_points": key_points,
                 "references": references,
                 "reflection": reflection,
-                "sources": raw_results[:3]
+                "sources": [{
+                    "title": r.get('title', ''),
+                    "link": r.get('link', ''),
+                    "snippet": r.get('snippet', '')
+                } for r in raw_results[:3]]
             }
             
         except Exception as e:

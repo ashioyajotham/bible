@@ -78,7 +78,7 @@ def main():
         logging.debug("Initializing Bible Agent")
         agent = BibleAgent()
         if args.interactive:
-            handle_interactive_mode(agent)
+            handle_interactive_mode()
         elif args.verse:
             verse = agent.get_daily_verse()
             print(verse)
@@ -86,34 +86,31 @@ def main():
         logging.error(f"Application error: {str(e)}")
         sys.exit(1)
 
-def handle_interactive_mode(agent: BibleAgent):
-    """Handle interactive mode with command processing"""
-    print("\nBible Study AI Agent - Interactive Mode")
-    print("Commands: verse, teach, search, export, quit")
-    
-    while True:
-        try:
-            command = input("\nEnter command: ").strip().lower()
+def handle_interactive_mode():
+    """Handle interactive mode with full command set"""
+    try:
+        agent = BibleAgent()
+        
+        commands = {
+            'search (s)': 'Search and analyze biblical topics',
+            'teach (t)': 'Get biblical teaching on a topic',
+            'verse (v)': 'Get daily verse with reflection',
+            'reflect (r)': 'Reflect on recent study',
+            'analyze (a)': 'Analyze biblical passage',
+            'export (e)': 'Export study session',
+            'help (h)': 'Show this help message',
+            'quit (q)': 'Exit application'
+        }
+        
+        print(agent.console_formatter.format_welcome(commands))
+        
+        while True:
+            command = input("\nEnter command (h for help): ").strip().lower()
+            agent.process_command(command)
             
-            if command == 'quit':
-                break
-            elif command == 'export':
-                filename = input("Enter filename (optional): ").strip()
-                agent.export_study_session(filename if filename else None)
-            elif command == 'teach':
-                topic = input("Enter topic: ")
-                agent.get_teachings(topic)  # Don't print return value
-            elif command == 'verse':
-                agent.get_daily_verse()  # Don't print return value
-            elif command == 'search':
-                query = input("Enter search query: ")
-                agent.search_biblical_insights(query)  # Don't print return value
-            else:
-                handle_command(command, agent)
-                
-        except Exception as e:
-            logging.error(f"Error processing command {command}: {str(e)}")
-            print(f"Error: {str(e)}")
+    except Exception as e:
+        logging.error(f"Application error: {str(e)}")
+        raise
 
 def handle_command(command: str, agent: BibleAgent) -> None:
     try:

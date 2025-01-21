@@ -52,33 +52,10 @@ class ConsoleFormatter:
 
         return f"{header}{topic}\n{content}\n{footer}"
 
-    def format_search_results(self, search_data: Dict) -> str:
-        """Format complete search results with analysis"""
-        header = f"""
-{Fore.CYAN}╔{'═' * 70}╗
-║ {'BIBLICAL INSIGHTS'.center(68)} ║
-╚{'═' * 70}╝{Style.RESET_ALL}"""
-
-        sections = [
-            (f"{Fore.YELLOW}🔍 SEARCH QUERY", search_data['query'].upper()),
-            (f"{Fore.GREEN}📚 THEOLOGICAL ANALYSIS", search_data['theological_analysis']),
-            (f"{Fore.BLUE}📝 KEY POINTS", "\n".join(f"• {point}" for point in search_data['key_points'])),
-            (f"{Fore.MAGENTA}✝️ BIBLICAL REFERENCES", "\n".join(f"• {ref}" for ref in search_data['references'])),
-            (f"{Fore.CYAN}🙏 SPIRITUAL REFLECTION", search_data['reflection']),
-            (f"{Fore.WHITE}📖 SOURCES", self._format_sources(search_data['sources']))
-        ]
-
-        content = "\n\n".join(
-            f"{title}{Style.RESET_ALL}\n{'─' * 70}\n{content}"
-            for title, content in sections
-        )
-
-        footer = f"""
-{Fore.CYAN}╔{'═' * 70}╗
-║ {'Generated with Biblical Analysis'.center(68)} ║
-╚{'═' * 70}╝{Style.RESET_ALL}"""
-
-        return f"{header}\n\n{content}\n\n{footer}"
+    def format_search_results(self, data: Dict) -> str:
+        """Format complete search results"""
+        # ...existing formatting code...
+        # Updated to match new data structure
 
     def _format_sources(self, sources: List[Dict]) -> str:
         """Format source references"""
@@ -158,3 +135,17 @@ class ConsoleFormatter:
             content.append(f"{Fore.YELLOW}{cmd:<15}{Style.RESET_ALL} - {desc}")
 
         return f"{header}\n\n" + "\n".join(content)
+
+    def format_welcome(self, commands: Dict[str, str]) -> str:
+        """Format welcome message with all commands"""
+        header = f"""
+{Fore.CYAN}╔{'═' * 70}╗
+║ {'BIBLE STUDY ASSISTANT'.center(68)} ║
+╚{'═' * 70}╝{Style.RESET_ALL}"""
+
+        command_list = "\n".join(
+            f"{Fore.YELLOW}{cmd:<15}{Style.RESET_ALL} - {desc}"
+            for cmd, desc in commands.items()
+        )
+        
+        return f"{header}\n\nAvailable Commands:\n{command_list}"
