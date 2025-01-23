@@ -1,0 +1,40 @@
+{
+  "api_response": {
+    "query": "James 1:5",
+    "canonical": "James 1:5",
+    "parsed": [
+      [
+        59001005,
+        59001005
+      ]
+    ],
+    "passage_meta": [
+      {
+        "canonical": "James 1:5",
+        "chapter_start": [
+          59001001,
+          59001027
+        ],
+        "chapter_end": [
+          59001001,
+          59001027
+        ],
+        "prev_verse": 59001004,
+        "next_verse": 59001006,
+        "prev_chapter": [
+          58013001,
+          58013025
+        ],
+        "next_chapter": [
+          59002001,
+          59002026
+        ]
+      }
+    ],
+    "passages": [
+      "James 1:5\n\n  If any of you lacks wisdom, let him ask God, who gives generously to all without reproach, and it will be given him.\n\n"
+    ]
+  },
+  "timestamp": "2025-01-23T11:15:13.806829",
+  "reference": "James 1:5"
+}

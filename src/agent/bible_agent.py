@@ -524,6 +524,8 @@ class BibleAgent(BaseAgent):
                 return self._handle_reflect_command()
             elif command == "export" or command == "e":
                 return self._handle_export_command()
+            elif command == "help" or command == "h":  # Add help handler
+                return self._handle_help_command()
             elif command == "exit" or command == "q":
                 print(f"{Fore.GREEN}Goodbye! God bless.{Style.RESET_ALL}")
                 exit(0)
@@ -654,3 +656,121 @@ class BibleAgent(BaseAgent):
         except Exception as e:
             logging.error(f"Prayer points generation failed: {str(e)}")
             return ""
+
+    def _handle_reflect_command(self) -> Optional[Dict]:
+        """Handle reflection on previous study content"""
+        try:
+            logging.debug("Executing reflect command")
+            
+            # Get latest content from session
+            if not self.current_session:
+                print("No active study session to reflect on.")
+                return None
+            
+            content = self.current_session.get_latest_content()
+            if not content:
+                print("Nothing to reflect on. Try studying a topic first.")
+                return None
+            
+            # Generate reflection using model
+            model = self.model_manager.get_model(self.current_model_type)
+            reflection = model.generate(f"""
+            Reflect deeply on this {content['type']}:
+            {content['content'].get('insights', content['content'].get('text', ''))}
+            
+            Provide:
+            1. Spiritual insights
+            2. Personal application
+            3. Prayer focus
+            """)
+            
+            reflection_data = {
+                "context_type": content['type'],
+                "insights": reflection.split('\n\n')[0],
+                "application": reflection.split('\n\n')[1],
+                "prayer": reflection.split('\n\n')[2],
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            self.current_session.add_reflection(reflection_data)
+            print(self.console_formatter.format_reflection(reflection_data))
+            return reflection_data
+            
+        except Exception as e:
+            logging.error(f"Reflection generation failed: {str(e)}")
+            return None
+
+    def _handle_export_command(self) -> Optional[str]:
+        """Handle study session export"""
+        try:
+            # Generate timestamp-based filename
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"bible_study_{timestamp}.md"
+            
+            # Create exports directory
+            export_dir = Config.DATA_DIR / "exports"
+            export_dir.mkdir(parents=True, exist_ok=True)
+            
+            export_path = export_dir / filename
+            
+            # Format study session content
+            content = [
+                "# Bible Study Session\n",
+                f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+            ]
+            
+            # Add teachings
+            if self.current_session.teachings:
+                content.extend([
+                    "## Teachings\n",
+                    *[f"### {t['query']}\n{t['insights']}\n" 
+                      for t in self.current_session.teachings],
+                    "\n"
+                ])
+            
+            # Add verses
+            if self.current_session.verses:
+                content.extend([
+                    "## Daily Verses\n",
+                    *[f"> {v['text']}\n*— {v['reference']} ({v['translation']})*\n\n{v.get('devotional', '')}\n" 
+                      for v in self.current_session.verses],
+                    "\n"
+                ])
+            
+            # Add reflections
+            if self.current_session.reflections:
+                content.extend([
+                    "## Reflections\n",
+                    *[f"### Reflection on {r['context_type']}\n{r['insights']}\n\n**Application:**\n{r['application']}\n\n**Prayer:**\n{r['prayer']}\n" 
+                      for r in self.current_session.reflections]
+                ])
+            
+            # Write to file
+            with open(export_path, 'w', encoding='utf-8') as f:
+                f.writelines(content)
+            
+            print(self.console_formatter.format_export_success(str(export_path)))
+            return str(export_path)
+            
+        except Exception as e:
+            logging.error(f"Export failed: {str(e)}")
+            return None
+
+    def _handle_help_command(self) -> Optional[Dict]:
+        """Handle help command"""
+        try:
+            commands = {
+                'teach (t)': 'Get biblical teaching and analysis',
+                'verse (v)': 'Get daily verse with devotional',
+                'reflect (r)': 'Reflect on recent study',
+                'export (e)': 'Export study session',
+                'help (h)': 'Show this help message',
+                'exit (q)': 'Exit application'
+            }
+            
+            print(self.console_formatter.format_welcome())
+            return {'command': 'help', 'shown': True}
+            
+        except Exception as e:
+            logging.error(f"Help display failed: {str(e)}")
+            return None
