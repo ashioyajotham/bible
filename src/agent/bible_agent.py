@@ -658,7 +658,6 @@ class BibleAgent(BaseAgent):
             return ""
 
     def _handle_reflect_command(self) -> Optional[Dict]:
-        """Handle reflection on previous study content"""
         try:
             logging.debug("Executing reflect command")
             
@@ -672,23 +671,37 @@ class BibleAgent(BaseAgent):
                 print("Nothing to reflect on. Try studying a topic first.")
                 return None
             
-            # Generate reflection using model
+            # More structured prompt
             model = self.model_manager.get_model(self.current_model_type)
             reflection = model.generate(f"""
             Reflect deeply on this {content['type']}:
             {content['content'].get('insights', content['content'].get('text', ''))}
             
-            Provide:
-            1. Spiritual insights
-            2. Personal application
-            3. Prayer focus
+            Format your response exactly as follows:
+            
+            INSIGHTS:
+            [Your spiritual insights here]
+            
+            APPLICATION:
+            [Your personal application points here]
+            
+            PRAYER:
+            [Your prayer focus here]
             """)
+            
+            # More robust parsing
+            sections = reflection.split('INSIGHTS:')[1].split('APPLICATION:')
+            insights = sections[0].strip()
+            
+            app_prayer = sections[1].split('PRAYER:')
+            application = app_prayer[0].strip()
+            prayer = app_prayer[1].strip() if len(app_prayer) > 1 else "Prayer focus pending..."
             
             reflection_data = {
                 "context_type": content['type'],
-                "insights": reflection.split('\n\n')[0],
-                "application": reflection.split('\n\n')[1],
-                "prayer": reflection.split('\n\n')[2],
+                "insights": insights,
+                "application": application,
+                "prayer": prayer,
                 "timestamp": datetime.now().isoformat()
             }
             
