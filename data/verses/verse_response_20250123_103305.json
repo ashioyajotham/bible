@@ -1,0 +1,40 @@
+{
+  "api_response": {
+    "query": "Proverbs 3:5\u20136",
+    "canonical": "Proverbs 3:5\u20136",
+    "parsed": [
+      [
+        20003005,
+        20003006
+      ]
+    ],
+    "passage_meta": [
+      {
+        "canonical": "Proverbs 3:5\u20136",
+        "chapter_start": [
+          20003001,
+          20003035
+        ],
+        "chapter_end": [
+          20003001,
+          20003035
+        ],
+        "prev_verse": 20003004,
+        "next_verse": 20003007,
+        "prev_chapter": [
+          20002001,
+          20002022
+        ],
+        "next_chapter": [
+          20004001,
+          20004027
+        ]
+      }
+    ],
+    "passages": [
+      "Proverbs 3:5\u20136\n\n    Trust in the LORD with all your heart,\n        and do not lean on your own understanding.\n    In all your ways acknowledge him,\n        and he will make straight your paths.\n    \n\n"
+    ]
+  },
+  "timestamp": "2025-01-23T10:33:05.055729",
+  "reference": "Proverbs 3:5-6"
+}

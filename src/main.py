@@ -15,12 +15,10 @@ from utils.helpers import setup_logging, create_export_filename
 
 def get_command_map():
     return {
-        'search': {'s', 'find', 'lookup'},
-        'teach': {'t', 'learn', 'study'},
-        'verse': {'v', 'daily', 'dv'},
-        'reflect': {'r', 'meditate', 'think'},
-        'analyze': {'a', 'study', 'examine'},  # Added analyze command
-        'export': {'e', 'save', 'backup'},
+        'teach': {'t'},  # Primary teaching command
+        'verse': {'v', 'daily'},
+        'reflect': {'r', 'meditate'},
+        'export': {'e', 'save'},
         'help': {'h', '?'},
         'exit': {'q', 'quit', 'bye'}
     }
@@ -75,9 +73,8 @@ def handle_interactive_mode():
         agent = BibleAgent()
         
         commands = {
-            'search (s)': 'Search and analyze biblical topics',
-            'teach (t)': 'Get biblical teaching on a topic',
-            'verse (v)': 'Get daily verse with reflection',
+            'teach (t)': 'Get biblical teaching and analysis',
+            'verse (v)': 'Get daily verse with devotional',
             'reflect (r)': 'Reflect on recent study',
             'analyze (a)': 'Analyze biblical passage',
             'export (e)': 'Export study session',

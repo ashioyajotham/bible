@@ -533,80 +533,85 @@ class BibleAgent(BaseAgent):
         return enhanced_results
 
     def process_command(self, command: str, *args) -> Optional[Dict]:
-        """Process commands with enhanced error handling and logging"""
         try:
             logging.debug(f"Processing command: {command}")
             
-            # Validate model initialization
-            if not hasattr(self, 'current_model_type') or not self._models:
-                logging.error("Model system not properly initialized")
-                raise Exception("Bible study system not properly initialized")
-
-            if command == "search" or command == "s":
-                logging.debug("Executing search command")
-                query = input("Enter search query: ").strip()
-                
-                # Verify search components
-                if not hasattr(self, 'search_agent'):
-                    logging.error("Search agent not initialized")
-                    raise Exception("Search system not available")
+            if command == "teach" or command == "t":
+                query = input("Enter topic for biblical teaching: ").strip()
+                if not query:
+                    print("Please provide a topic")
+                    return None
                     
-                results = self.search_agent.search_and_analyze(query)
-                logging.debug(f"Search results: {results is not None}")
-                
-                if results:
-                    self.current_session.add_search(results)
-                    print(self.console_formatter.format_search_results(results))
-                    return results
+                # Get teaching content
+                teaching_data = self.search_agent.search_and_analyze(query)
+                if teaching_data:
+                    self.current_session.add_teaching(teaching_data)
+                    print(self.console_formatter.format_teaching(teaching_data))
+                    return teaching_data
+                    
+            elif command == "verse" or command == "v":
+                logging.debug("Executing verse command")
+                verse = self.get_daily_verse()
+                if verse:
+                    # Generate devotional using model manager
+                    model = self.model_manager.get_model(self.current_model_type)
+                    devotional = model.generate(f"""
+                    Create a short devotional for this verse:
+                    {verse.text} - {verse.reference}
+                    
+                    Include:
+                    1. Brief explanation
+                    2. Life application
+                    3. Prayer point
+                    """)
+                    
+                    verse_data = verse.to_dict()
+                    verse_data['devotional'] = devotional
+                    
+                    print(self.console_formatter.format_verse(verse_data))
+                    return verse_data
                     
             elif command == "reflect" or command == "r":
                 logging.debug("Executing reflect command")
-                if not hasattr(self, 'current_session') or not self.current_session.searches:
-                    print("No recent searches to reflect on. Try searching first.")
+                if not hasattr(self, 'current_session'):
+                    print("No active study session to reflect on.")
                     return None
-                    
-                last_search = self.current_session.searches[-1]
-                reflection = self.search_agent.reflect_on_results(last_search)
                 
-                if reflection:
-                    reflection_data = {
-                        'application': reflection.split('\n')[0],  # First paragraph
-                        'prayer_points': '\n'.join(reflection.split('\n')[1:3]),  # Next two paragraphs
-                        'meditation_verses': '\n'.join(reflection.split('\n')[3:])  # Remaining content
-                    }
-                    print(self.console_formatter.format_reflection(reflection_data))
-                    return reflection_data
-                    
-            elif command == "analyze" or command == "a":
-                logging.debug("Executing analyze command")
-                passage = input("Enter Bible passage to analyze: ").strip()
+                # Get last item from session
+                last_teaching = None
+                if self.current_session.teachings:
+                    last_teaching = self.current_session.teachings[-1]
+                elif hasattr(self, 'current_verse'):
+                    last_teaching = {'text': self.current_verse.text, 'type': 'verse'}
                 
-                if not passage:
-                    print("Please provide a passage to analyze")
+                if not last_teaching:
+                    print("Nothing to reflect on. Try studying a topic first.")
                     return None
-                    
-                analysis = self.gemini.generate(f"""
-                Analyze this Bible passage: {passage}
                 
-                Consider:
-                1. Historical context
-                2. Theological significance
-                3. Key teachings
-                4. Modern application
+                # Generate reflection
+                model = self.model_manager.get_model(self.current_model_type)
+                reflection = model.generate(f"""
+                Reflect deeply on this teaching:
+                {last_teaching.get('teaching', last_teaching.get('text'))}
+                
+                Provide:
+                1. Spiritual insights
+                2. Personal application
+                3. Prayer focus
                 """)
                 
-                if analysis:
-                    analysis_data = {
-                        'passage': passage,
-                        'analysis': analysis,
-                        'model_used': 'gemini-pro'
-                    }
-                    print(self.console_formatter.format_analysis(analysis_data))
-                    return analysis_data
-                    
-            elif command == "help" or command == "h":
-                print(self.console_formatter.format_help())
-                return {"command": "help"}
+                reflection_data = {
+                    'context_type': 'teaching' if 'teaching' in last_teaching else 'verse',
+                    'insights': reflection.split('\n\n')[0],
+                    'application': reflection.split('\n\n')[1],
+                    'prayer': reflection.split('\n\n')[2]
+                }
+                
+                print(self.console_formatter.format_reflection(reflection_data))
+                return reflection_data
+                
+            elif command == "export" or command == "e":
+                return self.export_study_session()
                 
             elif command == "exit" or command == "q":
                 print("Goodbye! God bless.")
@@ -614,7 +619,6 @@ class BibleAgent(BaseAgent):
                 
         except Exception as e:
             logging.error(f"Command execution failed: {str(e)}")
-            print(f"Error: {str(e)}")
             return None
 
     def teach_biblical_topic(self, topic: str) -> Optional[Dict]:
