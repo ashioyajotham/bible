@@ -37,57 +37,46 @@ class BibleAgent(BaseAgent):
             logging.debug("Initializing BibleAgent")
             super().__init__()
             
-            # Initialize components
-            self.console_formatter = ConsoleFormatter()
-            self.model_manager = ModelManager()
+            # Core components
+            self._models = {}
             self.current_model_type = ModelType.GEMINI
+            self.model_manager = ModelManager()
+            self.console_formatter = ConsoleFormatter()
             
-            # Initialize model
+            # Initialize model system
             if not self._init_model():
                 raise Exception("Failed to initialize model system")
-                
-            # Initialize search agent with model manager
+            
+            # Initialize services
             self.search_agent = SearchAgent(model_manager=self.model_manager)
+            self.serper = SerperService(api_key=Config.SERPER_API_KEY)
             
-            # Initialize session
+            # State management
             self.current_session = StudySession()
-            
-            # Initialize verse preferences
             self.verse_preferences = {
                 "preferred_translations": ["ESV"],
                 "categories": [VerseCategory.WISDOM]
             }
             
+            # State tracking
+            self.memory = []
+            self.favorites = []
+            self.verse_history = []
+            
+            # Tools initialization
+            self.tools = {
+                'search': self.search_biblical_insights,
+                'reflect': self.generate_reflection,
+                'verse': self.get_daily_verse,
+                'teach': self.get_teachings,
+                'analyze': self.analyze_passage
+            }
+            
+            self.markdown_formatter = MarkdownFormatter()
+            
         except Exception as e:
             logging.error(f"Failed to initialize BibleAgent: {str(e)}")
             raise
-
-        self.serper = SerperService(api_key=Config.SERPER_API_KEY)
-        
-        # Agent State
-        self.memory = []
-        self.favorites = []
-        self.context = {}
-        self.goals = {
-            "primary": "Provide biblical insights and understanding",
-            "secondary": ["Learn from interactions", "Improve responses", "Build context"]
-        }
-        self.performance_metrics = {}
-        self.learning_history = []
-        
-        # Agent Tools
-        self.tools = {
-            'search': self.search_biblical_insights,
-            'reflect': self.generate_reflection,
-            'verse': self.get_daily_verse,
-            'teach': self.get_teachings,
-            'analyze': self.analyze_passage
-        }
-        
-        self.markdown_formatter = MarkdownFormatter()
-        self.console_formatter = ConsoleFormatter()
-        self.verse_history = []
-        self.search_agent = SearchAgent()
 
     def _init_model(self) -> bool:
         """Initialize primary model"""
