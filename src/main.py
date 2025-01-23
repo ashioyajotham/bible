@@ -23,6 +23,18 @@ def get_command_map():
         'exit': {'q', 'quit', 'bye'}
     }
 
+def show_help():
+    """Display available commands"""
+    commands = {
+        'teach (t)': 'Get biblical teaching and analysis',
+        'verse (v)': 'Get daily verse with devotional',
+        'reflect (r)': 'Reflect on recent study',
+        'export (e)': 'Export study session',
+        'help (h)': 'Show this help message',
+        'exit (q)': 'Exit application'
+    }
+    return commands
+
 def resolve_command(input_cmd: str) -> Optional[str]:
     """Resolve command aliases to main command"""
     cmd_map = get_command_map()

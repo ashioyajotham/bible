@@ -38,41 +38,24 @@ class BibleAgent(BaseAgent):
             super().__init__()
             
             # Core components
-            self._models = {}
-            self.current_model_type = ModelType.GEMINI
             self.model_manager = ModelManager()
+            self.current_model_type = ModelType.GEMINI
             self.console_formatter = ConsoleFormatter()
             
             # Initialize model system
+            self._models = {}
             if not self._init_model():
                 raise Exception("Failed to initialize model system")
             
             # Initialize services
             self.search_agent = SearchAgent(model_manager=self.model_manager)
-            self.serper = SerperService(api_key=Config.SERPER_API_KEY)
             
-            # State management
+            # Initialize session and preferences
             self.current_session = StudySession()
             self.verse_preferences = {
                 "preferred_translations": ["ESV"],
                 "categories": [VerseCategory.WISDOM]
             }
-            
-            # State tracking
-            self.memory = []
-            self.favorites = []
-            self.verse_history = []
-            
-            # Tools initialization
-            self.tools = {
-                'search': self.search_biblical_insights,
-                'reflect': self.generate_reflection,
-                'verse': self.get_daily_verse,
-                'teach': self.get_teachings,
-                'analyze': self.analyze_passage
-            }
-            
-            self.markdown_formatter = MarkdownFormatter()
             
         except Exception as e:
             logging.error(f"Failed to initialize BibleAgent: {str(e)}")
@@ -533,93 +516,131 @@ class BibleAgent(BaseAgent):
         return enhanced_results
 
     def process_command(self, command: str, *args) -> Optional[Dict]:
+        """Process user commands"""
         try:
             logging.debug(f"Processing command: {command}")
             
             if command == "teach" or command == "t":
-                query = input("Enter topic for biblical teaching: ").strip()
-                if not query:
-                    print("Please provide a topic")
-                    return None
-                    
-                # Get teaching content
-                teaching_data = self.search_agent.search_and_analyze(query)
-                if teaching_data:
-                    self.current_session.add_teaching(teaching_data)
-                    print(self.console_formatter.format_teaching(teaching_data))
-                    return teaching_data
-                    
+                return self._handle_teach_command()
             elif command == "verse" or command == "v":
-                logging.debug("Executing verse command")
-                verse = self.get_daily_verse()
-                if verse:
-                    # Generate devotional using model manager
-                    model = self.model_manager.get_model(self.current_model_type)
-                    devotional = model.generate(f"""
-                    Create a short devotional for this verse:
-                    {verse.text} - {verse.reference}
-                    
-                    Include:
-                    1. Brief explanation
-                    2. Life application
-                    3. Prayer point
-                    """)
-                    
-                    verse_data = verse.to_dict()
-                    verse_data['devotional'] = devotional
-                    
-                    print(self.console_formatter.format_verse(verse_data))
-                    return verse_data
-                    
+                return self._handle_verse_command()
             elif command == "reflect" or command == "r":
-                logging.debug("Executing reflect command")
-                if not hasattr(self, 'current_session'):
-                    print("No active study session to reflect on.")
-                    return None
-                
-                # Get last item from session
-                last_teaching = None
-                if self.current_session.teachings:
-                    last_teaching = self.current_session.teachings[-1]
-                elif hasattr(self, 'current_verse'):
-                    last_teaching = {'text': self.current_verse.text, 'type': 'verse'}
-                
-                if not last_teaching:
-                    print("Nothing to reflect on. Try studying a topic first.")
-                    return None
-                
-                # Generate reflection
-                model = self.model_manager.get_model(self.current_model_type)
-                reflection = model.generate(f"""
-                Reflect deeply on this teaching:
-                {last_teaching.get('teaching', last_teaching.get('text'))}
-                
-                Provide:
-                1. Spiritual insights
-                2. Personal application
-                3. Prayer focus
-                """)
-                
-                reflection_data = {
-                    'context_type': 'teaching' if 'teaching' in last_teaching else 'verse',
-                    'insights': reflection.split('\n\n')[0],
-                    'application': reflection.split('\n\n')[1],
-                    'prayer': reflection.split('\n\n')[2]
-                }
-                
-                print(self.console_formatter.format_reflection(reflection_data))
-                return reflection_data
-                
+                return self._handle_reflect_command()
             elif command == "export" or command == "e":
-                return self.export_study_session()
-                
+                return self._handle_export_command()
             elif command == "exit" or command == "q":
-                print("Goodbye! God bless.")
+                print(f"{Fore.GREEN}Goodbye! God bless.{Style.RESET_ALL}")
                 exit(0)
                 
         except Exception as e:
             logging.error(f"Command execution failed: {str(e)}")
             return None
+
+    def _handle_teach_command(self) -> Optional[Dict]:
+        """Handle biblical teaching generation"""
+        try:
+            query = input("Enter topic for biblical teaching: ").strip()
+            if not query:
+                print("Please provide a topic")
+                return None
+            
+            # Get search results and generate teaching
+            search_data = self.search_agent.search_and_analyze(query)
+            if not search_data:
+                return None
+                
+            teaching_data = {
+                "query": query,
+                "insights": search_data.get('insights', ''),
+                "references": self._extract_references(search_data.get('insights', '')),
+                "application": self._generate_application(search_data.get('insights', '')),
+                "prayer": self._generate_prayer_points(query, search_data.get('insights', '')),
+                "sources": search_data.get('sources', []),
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            # Add to session and display
+            self.current_session.add_teaching(teaching_data)
+            print(self.console_formatter.format_teaching(teaching_data))
+            return teaching_data
+            
+        except Exception as e:
+            logging.error(f"Teaching generation failed: {str(e)}")
+            return None
+
+    def _handle_verse_command(self) -> Optional[Dict]:
+        """Handle daily verse and devotional"""
+        try:
+            verse = self.get_daily_verse()
+            if not verse:
+                return None
+
+            model = self.model_manager.get_model(self.current_model_type)
+            devotional = model.generate(f"""
+            Create a short devotional for this verse:
+            {verse.text} - {verse.reference}
+            
+            Include:
+            1. Brief explanation
+            2. Life application
+            3. Prayer point
+            """)
+
+            verse_data = verse.to_dict()
+            verse_data['devotional'] = devotional
+            self.current_session.add_verse(verse_data)
+            
+            print(self.console_formatter.format_verse(verse_data))
+            return verse_data
+            
+        except Exception as e:
+            logging.error(f"Error generating verse content: {str(e)}")
+            return None
+
+    def _handle_reflect_command(self) -> Optional[Dict]:
+        """Handle reflection on previous content"""
+        try:
+            content = self.current_session.get_latest_content()
+            if not content:
+                print("Nothing to reflect on. Try studying a topic or verse first.")
+                return None
+            
+            model = self.model_manager.get_model(self.current_model_type)
+            reflection = model.generate(f"""
+            Reflect deeply on this {content['type']}:
+            {content['content'].get('insights', content['content'].get('text', ''))}
+            
+            Provide:
+            1. Spiritual insights
+            2. Personal application
+            3. Prayer focus
+            """)
+            
+            reflection_data = {
+                "context_type": content['type'],
+                "insights": reflection.split('\n\n')[0],
+                "application": reflection.split('\n\n')[1],
+                "prayer": reflection.split('\n\n')[2],
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            self.current_session.add_reflection(reflection_data)
+            print(self.console_formatter.format_reflection(reflection_data))
+            return reflection_data
+            
+        except Exception as e:
+            logging.error(f"Reflection generation failed: {str(e)}")
+            return None
+
+    def _handle_export_command(self) -> Optional[str]:
+        """Handle session export"""
+        try:
+            return self.export_study_session()
+        except Exception as e:
+            logging.error(f"Export failed: {str(e)}")
+            return None
+
+    # ... helper methods (_extract_references, _generate_application, etc.) ...
 
     def teach_biblical_topic(self, topic: str) -> Optional[Dict]:
         """Generate biblical teaching with proper response handling"""
@@ -655,3 +676,35 @@ class BibleAgent(BaseAgent):
         except Exception as e:
             logging.error(f"Teaching generation failed: {str(e)}")
             return None
+
+    def _handle_verse_command(self) -> Optional[Dict]:
+        logging.debug("Executing verse command")
+        verse = self.get_daily_verse()
+        if not verse:
+            return None
+            
+        try:
+            # Generate devotional
+            model = self.model_manager.get_model(self.current_model_type)
+            devotional = model.generate(f"""
+            Create a short devotional for this verse:
+            {verse.text} - {verse.reference}
+            
+            Include:
+            1. Brief explanation
+            2. Life application
+            3. Prayer point
+            """)
+            
+            verse_data = verse.to_dict()
+            verse_data['devotional'] = devotional
+            
+            # Add to session for reflection
+            self.current_session.add_verse(verse_data)
+            
+            print(self.console_formatter.format_verse(verse_data))
+            return verse_data
+            
+        except Exception as e:
+            logging.error(f"Error generating devotional: {str(e)}")
+            return verse.to_dict()  # Return verse without devotional as fallback
