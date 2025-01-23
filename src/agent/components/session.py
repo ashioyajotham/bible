@@ -11,22 +11,19 @@ class StudySession:
     timestamp: datetime = field(default_factory=datetime.now)
     
     def add_search(self, search_data: Dict) -> None:
-        """Add search results to session"""
+        """Add search results with consistent keys"""
         self.searches.append({
             "query": search_data["query"],
-            "theological_analysis": search_data.get("theological_analysis", ""),
-            "key_points": search_data.get("key_points", []),
-            "references": search_data.get("references", []),
-            "reflection": search_data.get("reflection", ""),
+            "insights": search_data["insights"],  # Matches SearchAgent output
             "sources": search_data.get("sources", []),
             "timestamp": datetime.now().isoformat()
         })
 
     def add_teaching(self, teaching_data: Dict) -> None:
-        """Add teaching to session"""
+        """Add teaching to session with consistent keys"""
         self.teachings.append({
             "topic": teaching_data["topic"],
-            "content": teaching_data["content"],
+            "teaching": teaching_data["teaching"],  # Consistent with BibleAgent
             "timestamp": datetime.now().isoformat()
         })
 

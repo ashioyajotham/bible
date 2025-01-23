@@ -29,35 +29,34 @@ from .components.session import StudySession
 
 import numpy as np
 
+from services.model_manager import ModelManager
+
 class BibleAgent(BaseAgent):
     def __init__(self):
         try:
             logging.debug("Initializing BibleAgent")
             super().__init__()
             
-            # Initialize formatters and models
+            # Initialize components
             self.console_formatter = ConsoleFormatter()
-            self.model_selector = ModelSelector()
-            self._models = {}
+            self.model_manager = ModelManager()
             self.current_model_type = ModelType.GEMINI
+            
+            # Initialize model
+            if not self._init_model():
+                raise Exception("Failed to initialize model system")
+                
+            # Initialize search agent with model manager
+            self.search_agent = SearchAgent(model_manager=self.model_manager)
+            
+            # Initialize session
+            self.current_session = StudySession()
             
             # Initialize verse preferences
             self.verse_preferences = {
                 "preferred_translations": ["ESV"],
-                "categories": [
-                    VerseCategory.WISDOM,
-                    VerseCategory.ENCOURAGEMENT,
-                    VerseCategory.FAITH,
-                    VerseCategory.PROMISES
-                ],
-                "review_interval_days": 7
+                "categories": [VerseCategory.WISDOM]
             }
-            
-            # Ensure StudySession is properly initialized
-            self.current_session = StudySession() 
-            
-            # Initialize search agent
-            self.search_agent = SearchAgent()
             
         except Exception as e:
             logging.error(f"Failed to initialize BibleAgent: {str(e)}")
@@ -89,6 +88,18 @@ class BibleAgent(BaseAgent):
         self.console_formatter = ConsoleFormatter()
         self.verse_history = []
         self.search_agent = SearchAgent()
+
+    def _init_model(self) -> bool:
+        """Initialize primary model"""
+        try:
+            model = self.model_manager.get_model(self.current_model_type)
+            if model:
+                self._models[self.current_model_type] = model
+                return True
+            return False
+        except Exception as e:
+            logging.error(f"Model initialization failed: {str(e)}")
+            return False
 
     def _initialize_goals(self):
         """Initialize agent goals"""
@@ -532,88 +543,79 @@ class BibleAgent(BaseAgent):
         print(self.console_formatter.format_search_results(enhanced_results))
         return enhanced_results
 
-    def process_command(self, command: str, *args) -> None:
-        """Process user commands with enhanced error handling"""
+    def process_command(self, command: str, *args) -> Optional[Dict]:
+        """Process commands with enhanced error handling and logging"""
         try:
+            logging.debug(f"Processing command: {command}")
+            
+            # Validate model initialization
+            if not hasattr(self, 'current_model_type') or not self._models:
+                logging.error("Model system not properly initialized")
+                raise Exception("Bible study system not properly initialized")
+
             if command == "search" or command == "s":
-                query = input("Enter search query: ")
-                results = self.search_agent.search_and_analyze(query)
-                key_points = self.search_agent._extract_key_points(results['theological_analysis'])
-                refs = self.search_agent._find_biblical_references(results['theological_analysis'])
+                logging.debug("Executing search command")
+                query = input("Enter search query: ").strip()
                 
-                self.current_session.add_search({
-                    "query": query,
-                    "results": results,
-                    "key_points": key_points,
-                    "references": refs,
-                    "reflection": self.search_agent.reflect_on_results(results)
-                })
-                
-                print(self.console_formatter.format_search_results(results))
-                
-            elif command == "reflect" or command == "r":
-                if not self.current_session.searches:
-                    print("No search results to reflect on. Try searching first.")
-                    return
+                # Verify search components
+                if not hasattr(self, 'search_agent'):
+                    logging.error("Search agent not initialized")
+                    raise Exception("Search system not available")
                     
-                latest_search = self.current_session.searches[-1]
-                reflection = self.search_agent.reflect_on_results(latest_search)
-                print(self.console_formatter.format_reflection(reflection))
+                results = self.search_agent.search_and_analyze(query)
+                logging.debug(f"Search results: {results is not None}")
+                
+                if results:
+                    self.current_session.add_search(results)
+                    print(self.console_formatter.format_search_results(results))
+                    return results
+                    
+            elif command == "teach" or command == "t":
+                logging.debug("Executing teach command")
+                topic = input("Enter topic: ").strip()
+                return self.teach_biblical_topic(topic)
                 
             elif command == "verse" or command == "v":
-                self.get_daily_verse()
-                
-            elif command == "teach" or command == "t":
-                topic = input("Enter topic: ")
-                self.teach_biblical_topic(topic)
-                
-            elif command == "export" or command == "e":
-                filename = input("Enter filename (optional): ")
-                self.export_study_session(filename)
-                
+                logging.debug("Executing verse command")
+                verse = self.get_daily_verse()
+                if verse:
+                    print(self.console_formatter.format_verse(verse.to_dict()))
+                    return verse.to_dict()
+                    
             elif command == "help" or command == "h":
                 print(self.console_formatter.format_help())
+                return {"command": "help"}
                 
             elif command == "exit" or command == "q":
                 print("Goodbye! God bless.")
                 exit(0)
                 
-            else:
-                print(f"Unknown command: {command}")
-                print(self.console_formatter.format_help())
-                
         except Exception as e:
-            logging.error(f"Error processing command {command}: {str(e)}")
-            raise
+            logging.error(f"Command execution failed: {str(e)}")
+            print(f"Error: {str(e)}")
+            return None
 
     def teach_biblical_topic(self, topic: str) -> Optional[Dict]:
-        """Generate biblical teaching with enhanced response handling"""
+        """Generate biblical teaching with proper response handling"""
         start_time = time.time()
-        model = None
         
         try:
-            context = {'topic': topic, 'timestamp': datetime.now().isoformat()}
-            
-            # Get initialized model
-            model = self.model_selector.select_and_get_model(
-                task=TaskType.TEACHING,
-                context=context
-            )
-            
+            # Get model
+            model = self.get_model(self.current_model_type)
             if not model:
                 raise Exception("Failed to initialize model")
-            
-            # Generate content with response validation
-            response = model.generate(self._create_teaching_prompt(topic))
-            if not response:
-                raise Exception("No content generated")
                 
-            # Structure the teaching data
+            # Generate teaching content
+            result = model.generate(self._create_teaching_prompt(topic))
+            if not result:
+                raise Exception("No content generated")
+            
+            # Package teaching data
             teaching_data = {
                 "topic": topic,
-                "teaching": response,
-                "model_used": str(self.current_model_type),
-                "generation_time": time.time() - start_time
+                "teaching": result,  # Changed from 'content' to 'teaching'
+                "model_used": "gemini-pro",
+                "timestamp": datetime.now().isoformat()
             }
             
             # Add to session

@@ -43,48 +43,32 @@ def resolve_command(input_cmd: str) -> Optional[str]:
     return None
 
 def main():
-    parser = argparse.ArgumentParser(description="Bible Study AI Agent")
-    
-    # Interactive mode
-    parser.add_argument('--interactive', '-i', 
-                       action='store_true', 
-                       help='Start interactive mode')
-    
-    # Daily verse
-    parser.add_argument('--verse', '-v', 
-                       action='store_true', 
-                       help='Get daily verse')
-    
-    # Teachings
-    parser.add_argument('--teach', '-t',
-                          help='Get teachings on a topic')
-    
-    # Search
-    parser.add_argument('--search', '-s',
-                            help='Search for biblical insights')
-    
-    # Debug mode
-    parser.add_argument('--debug', '-d', 
-                       action='store_true', 
-                       help='Enable debug logging')
-    
-    args = parser.parse_args()
-
-    # Setup logging based on debug flag
-    log_level = logging.DEBUG if args.debug else logging.INFO
-    setup_logging(level=log_level)
-    
+    """Main entry point with enhanced error handling"""
     try:
-        logging.debug("Initializing Bible Agent")
+        logging.basicConfig(level=logging.DEBUG)
         agent = BibleAgent()
-        if args.interactive:
-            handle_interactive_mode()
-        elif args.verse:
-            verse = agent.get_daily_verse()
-            print(verse)
+        
+        # Verify critical components
+        if not agent._models:
+            raise Exception("Model system failed to initialize")
+            
+        print(agent.console_formatter.format_welcome())
+        
+        while True:
+            command = input("\nEnter command (h for help): ").strip()
+            resolved_cmd = resolve_command(command)
+            
+            if resolved_cmd:
+                result = agent.process_command(resolved_cmd)
+                if result is None:
+                    print("Command failed. Please check the logs and try again.")
+            else:
+                print(f"Unknown command. Type 'h' for help.")
+                
     except Exception as e:
         logging.error(f"Application error: {str(e)}")
-        sys.exit(1)
+        print(f"Critical error: {str(e)}")
+        raise
 
 def handle_interactive_mode():
     """Handle interactive mode with full command set"""

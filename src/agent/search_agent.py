@@ -1,65 +1,48 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 from datetime import datetime
 from services.serper_service import SerperService
 from config.settings import Config
 from services.llm.gemini_llm import GeminiLLM
 import logging
+from services.llm.model_types import ModelType
+from services.model_manager import ModelManager
 
 class SearchAgent:
-    def __init__(self):
-        self.gemini = GeminiLLM(api_key=Config.GEMINI_API_KEY)
+    def __init__(self, model_manager: ModelManager):
+        self.model_manager = model_manager
         self.serper = SerperService(api_key=Config.SERPER_API_KEY)
+        self.gemini = self.model_manager.get_model(ModelType.GEMINI)
         self.cache = {}
 
-    def search_and_analyze(self, query: str) -> Dict:
-        """Enhanced biblical search with full analysis"""
+    def search_and_analyze(self, query: str) -> Optional[Dict]:
         try:
             # Get raw search results
             raw_results = self.serper.search(query)
+            if not raw_results:
+                raise Exception("No search results found")
+                
+            # Generate analysis
+            analysis = self.gemini.generate(f"""Analyze biblically: {query}
+            Based on: {[r.get('snippet', '') for r in raw_results[:3]]}""")
             
-            # Generate theological analysis
-            theological_prompt = f"""Analyze this topic biblically: {query}
-            Based on: {[r.get('snippet', '') for r in raw_results[:3]]}
-            
-            Provide:
-            1. Biblical perspective
-            2. Key principles
-            3. Scripture foundation
-            4. Practical application
-            """
-            
-            analysis = self.gemini.generate(theological_prompt)
-            key_points = self._extract_key_points(analysis)
-            references = self._find_biblical_references(analysis)
-            
-            # Generate reflection
-            reflection_prompt = f"""Reflect spiritually on: {query}
-            Based on: {analysis}
-            
-            Include:
-            1. Personal application
-            2. Prayer points
-            3. Meditation focus
-            """
-            
-            reflection = self.gemini.generate(reflection_prompt)
-            
+            if not analysis:
+                raise Exception("Failed to generate analysis")
+                
+            # Return structured response
             return {
                 "query": query,
-                "theological_analysis": analysis,
-                "key_points": key_points,
-                "references": references,
-                "reflection": reflection,
+                "insights": analysis,
                 "sources": [{
                     "title": r.get('title', ''),
                     "link": r.get('link', ''),
                     "snippet": r.get('snippet', '')
-                } for r in raw_results[:3]]
+                } for r in raw_results[:3]],
+                "timestamp": datetime.now().isoformat()
             }
             
         except Exception as e:
-            logging.error(f"Search and analysis failed: {str(e)}")
-            raise
+            logging.error(f"Search failed: {str(e)}")
+            return None
 
     def reflect_on_results(self, search_results: Dict) -> str:
         """Generate spiritual reflection on search results"""

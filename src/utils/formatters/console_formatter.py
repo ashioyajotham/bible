@@ -136,8 +136,18 @@ class ConsoleFormatter:
 
         return f"{header}\n\n" + "\n".join(content)
 
-    def format_welcome(self, commands: Dict[str, str]) -> str:
+    def format_welcome(self) -> str:
         """Format welcome message with all commands"""
+        commands = {
+            'search (s)': 'Search biblical content and get analysis',
+            'teach (t)': 'Get biblical teaching on a topic',
+            'verse (v)': 'Get daily verse with reflection',
+            'reflect (r)': 'Reflect on recent search/study',
+            'export (e)': 'Export study session',
+            'help (h)': 'Show this help message',
+            'exit (q)': 'Exit the application'
+        }
+
         header = f"""
 {Fore.CYAN}╔{'═' * 70}╗
 ║ {'BIBLE STUDY ASSISTANT'.center(68)} ║
