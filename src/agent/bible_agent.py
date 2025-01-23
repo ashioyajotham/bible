@@ -559,17 +559,50 @@ class BibleAgent(BaseAgent):
                     print(self.console_formatter.format_search_results(results))
                     return results
                     
-            elif command == "teach" or command == "t":
-                logging.debug("Executing teach command")
-                topic = input("Enter topic: ").strip()
-                return self.teach_biblical_topic(topic)
+            elif command == "reflect" or command == "r":
+                logging.debug("Executing reflect command")
+                if not hasattr(self, 'current_session') or not self.current_session.searches:
+                    print("No recent searches to reflect on. Try searching first.")
+                    return None
+                    
+                last_search = self.current_session.searches[-1]
+                reflection = self.search_agent.reflect_on_results(last_search)
                 
-            elif command == "verse" or command == "v":
-                logging.debug("Executing verse command")
-                verse = self.get_daily_verse()
-                if verse:
-                    print(self.console_formatter.format_verse(verse.to_dict()))
-                    return verse.to_dict()
+                if reflection:
+                    reflection_data = {
+                        'application': reflection.split('\n')[0],  # First paragraph
+                        'prayer_points': '\n'.join(reflection.split('\n')[1:3]),  # Next two paragraphs
+                        'meditation_verses': '\n'.join(reflection.split('\n')[3:])  # Remaining content
+                    }
+                    print(self.console_formatter.format_reflection(reflection_data))
+                    return reflection_data
+                    
+            elif command == "analyze" or command == "a":
+                logging.debug("Executing analyze command")
+                passage = input("Enter Bible passage to analyze: ").strip()
+                
+                if not passage:
+                    print("Please provide a passage to analyze")
+                    return None
+                    
+                analysis = self.gemini.generate(f"""
+                Analyze this Bible passage: {passage}
+                
+                Consider:
+                1. Historical context
+                2. Theological significance
+                3. Key teachings
+                4. Modern application
+                """)
+                
+                if analysis:
+                    analysis_data = {
+                        'passage': passage,
+                        'analysis': analysis,
+                        'model_used': 'gemini-pro'
+                    }
+                    print(self.console_formatter.format_analysis(analysis_data))
+                    return analysis_data
                     
             elif command == "help" or command == "h":
                 print(self.console_formatter.format_help())

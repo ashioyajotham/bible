@@ -14,13 +14,12 @@ from agent.bible_agent import BibleAgent
 from utils.helpers import setup_logging, create_export_filename
 
 def get_command_map():
-    """Get mapping of commands and their shortcuts"""
     return {
-        # Main commands and their shortcuts
         'search': {'s', 'find', 'lookup'},
         'teach': {'t', 'learn', 'study'},
         'verse': {'v', 'daily', 'dv'},
         'reflect': {'r', 'meditate', 'think'},
+        'analyze': {'a', 'study', 'examine'},  # Added analyze command
         'export': {'e', 'save', 'backup'},
         'help': {'h', '?'},
         'exit': {'q', 'quit', 'bye'}

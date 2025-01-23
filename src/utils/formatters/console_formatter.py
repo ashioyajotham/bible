@@ -53,18 +53,60 @@ class ConsoleFormatter:
         return f"{header}{topic}\n{content}\n{footer}"
 
     def format_search_results(self, data: Dict) -> str:
-        """Format complete search results"""
-        # ...existing formatting code...
-        # Updated to match new data structure
+        """Format complete search results with rich styling"""
+        # Create fancy header
+        header = f"""
+{Fore.CYAN}╔{'═' * 70}╗
+║ {'BIBLICAL INSIGHTS'.center(68)} ║
+╚{'═' * 70}╝{Style.RESET_ALL}"""
+
+        # Format search query section
+        query = f"""\n{Fore.YELLOW}┌{'─' * 68}┐
+│ {Back.BLUE}{Fore.WHITE} 🔍 Search: {data['query'].upper()} {Style.RESET_ALL}{Fore.YELLOW}
+└{'─' * 68}┘{Style.RESET_ALL}\n"""
+
+        # Format insights with proper wrapping
+        insights_parts = data['insights'].split('\n\n')
+        formatted_insights = []
+        
+        for part in insights_parts:
+            wrapped = textwrap.fill(part.strip(), width=65)
+            # Add left border for content
+            wrapped = '\n'.join(f"{Fore.GREEN}│{Style.RESET_ALL} {line}" 
+                              for line in wrapped.split('\n'))
+            formatted_insights.append(wrapped)
+
+        # Join insights with separators
+        separator = f"\n{Fore.CYAN}├{'─' * 68}┤{Style.RESET_ALL}\n"
+        insights = separator.join(formatted_insights)
+
+        # Format sources
+        sources_header = f"\n{Fore.MAGENTA}📚 Sources:{Style.RESET_ALL}\n"
+        sources = self._format_sources(data['sources'])
+
+        # Add styled footer with timestamp
+        timestamp = datetime.fromisoformat(data['timestamp']).strftime("%Y-%m-%d %H:%M:%S")
+        footer = f"""
+{Fore.CYAN}╔{'═' * 70}╗
+║ {f'Generated at {timestamp}'.center(68)} ║
+╚{'═' * 70}╝{Style.RESET_ALL}
+"""
+
+        return f"{header}{query}\n{insights}\n{sources_header}{sources}\n{footer}"
 
     def _format_sources(self, sources: List[Dict]) -> str:
-        """Format source references"""
-        return "\n\n".join(
-            f"Source {i+1}:\n"
-            f"Title: {source.get('title', 'N/A')}\n"
-            f"Link: {source.get('link', 'N/A')}"
-            for i, source in enumerate(sources)
-        )
+        """Format source references with enhanced styling"""
+        formatted_sources = []
+        for i, source in enumerate(sources, 1):
+            source_text = (
+                f"{Fore.YELLOW}Source {i}:{Style.RESET_ALL}\n"
+                f"{Fore.CYAN}Title:{Style.RESET_ALL} {source.get('title', 'N/A')}\n"
+                f"{Fore.CYAN}Link: {Style.RESET_ALL}{source.get('link', 'N/A')}\n"
+                f"{Fore.CYAN}Summary:{Style.RESET_ALL} {textwrap.fill(source.get('snippet', 'N/A'), width=65)}"
+            )
+            formatted_sources.append(source_text)
+        
+        return "\n\n".join(formatted_sources)
 
     def format_reflection(self, reflection_data: Dict) -> str:
         """Format spiritual reflection"""
