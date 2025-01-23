@@ -1,0 +1,68 @@
+# Test Analysis for Bible Study Assistant
+
+### 1. Core Agent Components
+- `BibleAgent`
+  - Command processing
+  - Model initialization
+  - Session management
+  - Error handling
+
+### 2. Study Features
+- **Teaching Generation**
+  - Topic analysis
+  - Content generation
+  - References extraction
+  - Prayer point generation
+
+- **Verse Handling**
+  - Daily verse selection
+  - Devotional generation
+  - ESV API integration
+  - Verse data formatting
+
+- **Reflection System**
+  - Context awareness
+  - Previous content access
+  - Insight generation
+  - Application points
+
+### 3. Data Management
+- **Session Management**
+  - Teaching storage
+  - Verse tracking
+  - Reflection storage
+  - Export functionality
+
+- **File Operations**
+  - Export to markdown
+  - File path handling
+  - Data persistence
+
+### 4. Integration Points
+- **API Integration**
+  - ESV API calls
+  - Search API usage
+  - Model API calls
+  - Error recovery
+
+- **Model Management**
+  - Model initialization
+  - Response handling
+  - Context management
+  - Token usage
+
+### 5. Formatting System
+- **Console Output**
+  - Teaching format
+  - Verse display
+  - Reflection format
+  - Color handling
+
+### Test Priority Order:
+1. 🔄 Core command processing
+2. 📚 Teaching generation
+3. 📖 Verse handling
+4. 💭 Reflection system
+5. 💾 Session management
+6. 🔌 API integration
+7. 🎨 Output formatting
