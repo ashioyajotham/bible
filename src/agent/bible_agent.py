@@ -150,7 +150,6 @@ class BibleAgent(BaseAgent):
             return self._get_fallback_verse()
 
     def _fetch_verse(self, reference: str, translation: str) -> Optional[Verse]:
-        """Fetch verse from ESV API"""
         try:
             url = "https://api.esv.org/v3/passage/text/"
             headers = {'Authorization': f'Token {Config.ESV_API_KEY}'}
@@ -196,11 +195,8 @@ class BibleAgent(BaseAgent):
                 category=self.verse_preferences["categories"][0]
             )
             
-            verse_dict = verse.to_dict()
-            logging.debug(f"Processed verse: {json.dumps(verse_dict, indent=2)}")
-            print(self.console_formatter.format_verse(verse_dict))
-            print(f"\n{Fore.BLUE}💾 Detailed response saved to: {json_file}{Style.RESET_ALL}")
-            return verse
+            logging.debug(f"Processed verse: {json.dumps(verse.to_dict(), indent=2)}")
+            return verse  # Return verse object only, don't format yet
             
         except Exception as e:
             logging.error(f"ESV API error: {str(e)}")
@@ -569,115 +565,6 @@ class BibleAgent(BaseAgent):
             return None
 
     def _handle_verse_command(self) -> Optional[Dict]:
-        """Handle daily verse and devotional"""
-        try:
-            verse = self.get_daily_verse()
-            if not verse:
-                return None
-
-            model = self.model_manager.get_model(self.current_model_type)
-            devotional = model.generate(f"""
-            Create a short devotional for this verse:
-            {verse.text} - {verse.reference}
-            
-            Include:
-            1. Brief explanation
-            2. Life application
-            3. Prayer point
-            """)
-
-            verse_data = verse.to_dict()
-            verse_data['devotional'] = devotional
-            self.current_session.add_verse(verse_data)
-            
-            print(self.console_formatter.format_verse(verse_data))
-            return verse_data
-            
-        except Exception as e:
-            logging.error(f"Error generating verse content: {str(e)}")
-            return None
-
-    def _handle_reflect_command(self) -> Optional[Dict]:
-        """Handle reflection on previous content"""
-        try:
-            content = self.current_session.get_latest_content()
-            if not content:
-                print("Nothing to reflect on. Try studying a topic or verse first.")
-                return None
-            
-            model = self.model_manager.get_model(self.current_model_type)
-            reflection = model.generate(f"""
-            Reflect deeply on this {content['type']}:
-            {content['content'].get('insights', content['content'].get('text', ''))}
-            
-            Provide:
-            1. Spiritual insights
-            2. Personal application
-            3. Prayer focus
-            """)
-            
-            reflection_data = {
-                "context_type": content['type'],
-                "insights": reflection.split('\n\n')[0],
-                "application": reflection.split('\n\n')[1],
-                "prayer": reflection.split('\n\n')[2],
-                "timestamp": datetime.now().isoformat()
-            }
-            
-            self.current_session.add_reflection(reflection_data)
-            print(self.console_formatter.format_reflection(reflection_data))
-            return reflection_data
-            
-        except Exception as e:
-            logging.error(f"Reflection generation failed: {str(e)}")
-            return None
-
-    def _handle_export_command(self) -> Optional[str]:
-        """Handle session export"""
-        try:
-            return self.export_study_session()
-        except Exception as e:
-            logging.error(f"Export failed: {str(e)}")
-            return None
-
-    # ... helper methods (_extract_references, _generate_application, etc.) ...
-
-    def teach_biblical_topic(self, topic: str) -> Optional[Dict]:
-        """Generate biblical teaching with proper response handling"""
-        start_time = time.time()
-        
-        try:
-            # Get model
-            model = self.get_model(self.current_model_type)
-            if not model:
-                raise Exception("Failed to initialize model")
-                
-            # Generate teaching content
-            result = model.generate(self._create_teaching_prompt(topic))
-            if not result:
-                raise Exception("No content generated")
-            
-            # Package teaching data
-            teaching_data = {
-                "topic": topic,
-                "teaching": result,  # Changed from 'content' to 'teaching'
-                "model_used": "gemini-pro",
-                "timestamp": datetime.now().isoformat()
-            }
-            
-            # Add to session
-            if hasattr(self, 'current_session'):
-                self.current_session.add_teaching(teaching_data)
-            
-            # Format and display
-            print(self.console_formatter.format_teaching(teaching_data))
-            return teaching_data
-            
-        except Exception as e:
-            logging.error(f"Teaching generation failed: {str(e)}")
-            return None
-
-    def _handle_verse_command(self) -> Optional[Dict]:
         logging.debug("Executing verse command")
         verse = self.get_daily_verse()
         if not verse:
@@ -708,3 +595,62 @@ class BibleAgent(BaseAgent):
         except Exception as e:
             logging.error(f"Error generating devotional: {str(e)}")
             return verse.to_dict()  # Return verse without devotional as fallback
+
+    def _extract_references(self, text: str) -> List[str]:
+        """Extract biblical references from text"""
+        try:
+            model = self.model_manager.get_model(self.current_model_type)
+            prompt = f"""
+            Extract all Bible verse references from this text:
+            {text}
+            
+            Return only the references, one per line.
+            Example format:
+            John 3:16
+            Romans 8:28
+            """
+            
+            result = model.generate(prompt)
+            return [ref.strip() for ref in result.split('\n') if ref.strip()]
+        except Exception as e:
+            logging.error(f"Reference extraction failed: {str(e)}")
+            return []
+
+    def _generate_application(self, insights: str) -> str:
+        """Generate practical application points"""
+        try:
+            model = self.model_manager.get_model(self.current_model_type)
+            prompt = f"""
+            Based on these biblical insights:
+            {insights}
+            
+            Generate practical application points including:
+            1. Personal application
+            2. Daily life implementation
+            3. Spiritual growth steps
+            """
+            
+            return model.generate(prompt)
+        except Exception as e:
+            logging.error(f"Application generation failed: {str(e)}")
+            return ""
+
+    def _generate_prayer_points(self, topic: str, insights: str) -> str:
+        """Generate focused prayer points"""
+        try:
+            model = self.model_manager.get_model(self.current_model_type)
+            prompt = f"""
+            Based on the topic '{topic}' and these insights:
+            {insights}
+            
+            Create focused prayer points covering:
+            1. Personal transformation
+            2. Spiritual understanding
+            3. Practical application
+            4. Community impact
+            """
+            
+            return model.generate(prompt)
+        except Exception as e:
+            logging.error(f"Prayer points generation failed: {str(e)}")
+            return ""
