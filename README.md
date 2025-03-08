@@ -1,17 +1,76 @@
-# Bible Study AI Agent 🤖📚
+# Biblia: Bible Study AI Assistant 🤖📚
 
-An intelligent agent system for biblical study and analysis, combining modern AI with scriptural wisdom.
+An intelligent assistant for biblical study and spiritual growth that combines modern AI with scriptural wisdom, featuring beautiful terminal-based UI.
 
-## 🌟 Key Features
+![Biblia Terminal UI](https://raw.githubusercontent.com/ashioyajotham/bible/main/docs/images/terminal_ui.png)
 
-- **Interactive Study Mode**: Engage in dynamic Bible study sessions with natural language interactions
-- **Intelligent Search**: Advanced biblical search with theological analysis and cross-references
-- **Daily Verses**: AI-curated daily verses with contextual insights
-- **Spiritual Reflections**: Generate meaningful reflections on biblical passages
-- **Teaching Generation**: Get in-depth teachings on biblical topics
-- **Multi-Model Support**: Leverages both Google's Gemini and Hugging Face models
-- **Export Capabilities**: Save study sessions in beautifully formatted Markdown
-- **Smart Model Selection**: Automatic model selection based on task requirements
+## ✨ Features
+
+- **Rich Terminal Interface**: Beautiful, colorful console output with proper formatting of headings, lists, and emphasis
+- **AI-Powered Biblical Teaching**: Generate in-depth theological insights on any biblical topic
+- **Daily Verse Devotionals**: Receive daily verses with AI-generated devotional content
+- **Spiritual Reflections**: Create meaningful reflections on biblical passages and teachings
+- **Markdown Export**: Save your study sessions in beautifully formatted Markdown files
+- **Google Gemini Integration**: Leverages Google's powerful Gemini AI model for theological analysis
+
+## 📸 Screenshots
+
+<details>
+<summary>Click to see Biblia in action</summary>
+
+### Welcome Screen
+![Welcome Screen](https://raw.githubusercontent.com/ashioyajotham/bible/main/docs/images/welcome.png)
+
+### Biblical Teaching
+![Teaching Example](https://raw.githubusercontent.com/ashioyajotham/bible/main/docs/images/teaching.png)
+
+### Daily Verse
+![Daily Verse](https://raw.githubusercontent.com/ashioyajotham/bible/main/docs/images/verse.png)
+
+</details>
+
+## 🚀 Installation
+
+### From PyPI (Recommended)
+
+```bash
+pip install biblia
+```
+
+### From Source
+
+```bash
+git clone https://github.com/ashioyajotham/bible.git
+cd bible
+pip install -e .
+```
+
+## 🔑 Configuration
+
+Create a `.env` file in your project directory:
+
+```env
+GEMINI_API_KEY=your_gemini_key
+SERPER_API_KEY=your_serper_key  # For web search capabilities
+ESV_API_KEY=your_esv_key        # For Bible verse lookup
+```
+
+## 📖 Usage
+
+### Start Interactive Mode
+
+```bash
+bible
+```
+
+### Available Commands
+
+- `teach (t)`: Get biblical teaching on a topic
+- `verse (v)`: Get daily verse with devotional
+- `reflect (r)`: Reflect on recent study
+- `export (e)`: Export study session
+- `help (h)`: Show help message
+- `exit (q)`: Exit application
 
 ## 🏗️ Architecture
 
@@ -46,102 +105,21 @@ graph TB
     end
 ```
 
-## 🔧 Technical Components
+## 🛠️ Technical Components
 
-- **Agent System**
-  - `BibleAgent`: Core orchestrator for all functionalities
-  - `SearchAgent`: Handles biblical search and analysis
-  - `ModelSelector`: Smart model selection based on task
-  
-- **Models & Services**
-  - Google Gemini Integration
-  - HuggingFace Models Support
-  - Serper API Integration
-  - ESV Bible API Integration
+- **Rich Console Interface**: Beautiful terminal UI with color, formatting, and proper Markdown rendering
+- **Agent System**: Modular design with specialized agents for different tasks
+- **AI Integration**: Google Gemini model for high-quality theological insights
+- **Session Management**: Persistent study sessions that can be exported
+- **Error Handling**: Graceful error handling and user-friendly messages
 
-- **Session Management**
-  - Study Session Tracking
-  - Progress Persistence
-  - Export Capabilities
+## 🙏 Contributing
 
-## 🚀 Getting Started
-
-1. **Clone the repository**
-```bash
-git clone https://github.com/ashioyajotham/bible-study-ai.git
-cd bible-study-ai
-```
-
-2. **Set up environment**
-```bash
-python -m venv venv
-source venv/bin/activate  # or `venv\Scripts\activate` on Windows
-pip install -r requirements.txt
-```
-
-3. **Configure API keys**
-Create a `.env` file:
-```env
-GEMINI_API_KEY=your_gemini_key
-SERPER_API_KEY=your_serper_key
-ESV_API_KEY=your_esv_key
-HF_API_KEY=your_huggingface_key
-```
-
-4. **Run the application**
-```bash
-python src/main.py --interactive
-```
-
-## 💻 Usage Examples
-
-### Interactive Mode
-```bash
-python src/main.py -i
-```
-
-### Get Daily Verse
-```bash
-python src/main.py --verse
-```
-
-### Search Biblical Topics
-```bash
-python src/main.py --search "love your neighbor"
-```
-
-### Generate Teaching
-```bash
-python src/main.py --teach "forgiveness"
-```
-
-## 🔍 Command Reference
-
-- `search (s)`: Search and analyze biblical topics
-- `teach (t)`: Get biblical teaching on a topic
-- `verse (v)`: Get daily verse with reflection
-- `reflect (r)`: Reflect on recent study
-- `analyze (a)`: Analyze biblical passage
-- `export (e)`: Export study session
-- `help (h)`: Show help message
-- `quit (q)`: Exit application
-
-## 🛠️ Development
-
-The project uses a modular architecture with clear separation of concerns:
-
-- `src/agent/`: Core agent implementations
-- `src/models/`: Data models and structures
-- `src/services/`: External service integrations
-- `src/utils/`: Helper utilities and formatters
+Contributions are welcome! Please read our [contributing guidelines](CONTRIBUTING.md) for more details.
 
 ## 📜 License
 
-MIT License - See LICENSE file for details
-
-## 🤝 Contributing
-
-Contributions are welcome! Please read our contributing guidelines and submit pull requests.
+MIT License - See [LICENSE](LICENSE) for more details.
 
 ## ⚠️ Note
 

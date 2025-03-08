@@ -6,8 +6,8 @@ with open('README.md', encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name="bible",
-    version="0.2.5",
+    name="biblia",
+    version="0.3.5",
     description="Bible Study Assistant for Christian Education and Research",
     long_description=long_description,
     long_description_content_type="text/markdown",
