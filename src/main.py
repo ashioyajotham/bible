@@ -2,6 +2,7 @@ import os
 import argparse
 import sys
 import logging
+from rich.console import Console
 
 from typing import Optional
 
@@ -53,6 +54,7 @@ def resolve_command(input_cmd: str) -> Optional[str]:
 
 def main():
     """Main entry point with enhanced error handling"""
+    console = Console()
     try:
         logging.basicConfig(level=logging.DEBUG)
         agent = BibleAgent()
@@ -61,19 +63,29 @@ def main():
         if not agent._models:
             raise Exception("Model system failed to initialize")
             
+        # Use rich formatted welcome message
         print(agent.console_formatter.format_welcome())
         
         while True:
-            command = input("\nEnter command (h for help): ").strip()
-            resolved_cmd = resolve_command(command)
-            
-            if resolved_cmd:
-                result = agent.process_command(resolved_cmd)
-                if result is None:
-                    print("Command failed. Please check the logs and try again.")
-            else:
-                print(f"Unknown command. Type 'h' for help.")
+            try:
+                command = input("\nEnter command (h for help): ").strip()
+                resolved_cmd = resolve_command(command)
                 
+                if resolved_cmd:
+                    result = agent.process_command(resolved_cmd)
+                    if result is None:
+                        print("Command failed. Please check the logs and try again.")
+                else:
+                    print(f"Unknown command. Type 'h' for help.")
+            except KeyboardInterrupt:
+                # Handle Ctrl+C gracefully
+                console.print("\n\n[bold green]👋 Goodbye! God bless your spiritual journey.[/bold green]")
+                sys.exit(0)
+                
+    except KeyboardInterrupt:
+        # Handle Ctrl+C outside the input loop
+        console.print("\n\n[bold green]👋 Goodbye! God bless your spiritual journey.[/bold green]")
+        sys.exit(0)
     except Exception as e:
         logging.error(f"Application error: {str(e)}")
         print(f"Critical error: {str(e)}")
@@ -81,6 +93,7 @@ def main():
 
 def handle_interactive_mode():
     """Handle interactive mode with full command set"""
+    console = Console()
     try:
         agent = BibleAgent()
         
@@ -97,9 +110,17 @@ def handle_interactive_mode():
         print(agent.console_formatter.format_welcome(commands))
         
         while True:
-            command = input("\nEnter command (h for help): ").strip().lower()
-            agent.process_command(command)
+            try:
+                command = input("\nEnter command (h for help): ").strip().lower()
+                agent.process_command(command)
+            except KeyboardInterrupt:
+                # Handle Ctrl+C gracefully
+                console.print("\n\n[bold green]👋 Goodbye! God bless your spiritual journey.[/bold green]")
+                sys.exit(0)
             
+    except KeyboardInterrupt:
+        console.print("\n\n[bold green]👋 Goodbye! God bless your spiritual journey.[/bold green]")
+        sys.exit(0)
     except Exception as e:
         logging.error(f"Application error: {str(e)}")
         raise

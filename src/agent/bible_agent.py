@@ -772,15 +772,6 @@ class BibleAgent(BaseAgent):
     def _handle_help_command(self) -> Optional[Dict]:
         """Handle help command"""
         try:
-            commands = {
-                'teach (t)': 'Get biblical teaching and analysis',
-                'verse (v)': 'Get daily verse with devotional',
-                'reflect (r)': 'Reflect on recent study',
-                'export (e)': 'Export study session',
-                'help (h)': 'Show this help message',
-                'exit (q)': 'Exit application'
-            }
-            
             print(self.console_formatter.format_welcome())
             return {'command': 'help', 'shown': True}
             

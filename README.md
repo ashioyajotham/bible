@@ -68,7 +68,7 @@ graph TB
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/bible-study-ai.git
+git clone https://github.com/ashioyajotham/bible-study-ai.git
 cd bible-study-ai
 ```
 
