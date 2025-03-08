@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "bible"
+name = "biblia"
 dynamic = ["version"]
 description = "Bible Study Assistant for Christian Education and Research"
 readme = "README.md"

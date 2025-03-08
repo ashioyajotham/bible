@@ -2,7 +2,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 from rich.table import Table
-from rich.box import Box, ROUNDED, HEAVY, DOUBLE
+from rich.box import ROUNDED, HEAVY, DOUBLE  # Import box styles directly as constants
 from rich.markdown import Markdown
 from rich.align import Align
 from rich.layout import Layout
@@ -32,7 +32,7 @@ class ConsoleFormatter:
         """Create standardized header panel"""
         return Panel(
             Text(title, style="bold cyan", justify="center"),
-            box=DOUBLE,
+            box=DOUBLE,  # Use DOUBLE directly, not Box.DOUBLE
             border_style="cyan",
             expand=True
         )
@@ -41,7 +41,7 @@ class ConsoleFormatter:
         """Create standardized section title"""
         return Panel(
             Text(f"{icon} {title.upper()}", style="white on blue"),
-            box=ROUNDED,
+            box=ROUNDED,  # Use ROUNDED directly, not Box.ROUNDED
             border_style="yellow",
             padding=(0, 2),
             expand=True
@@ -54,9 +54,9 @@ class ConsoleFormatter:
             self.console.print(self._create_header("BIBLICAL TEACHING"))
             self.console.print(self._create_section_title(data['query'], "📚"))
             
-            # Key Insights
+            # Key Insights - Convert to Markdown for proper rendering
             self.console.print(Panel(
-                Text(data['insights'], style="green"),
+                Markdown(data['insights']),  # Change from Text to Markdown
                 title="🔍 Key Insights",
                 title_align="left",
                 box=ROUNDED,
@@ -67,7 +67,7 @@ class ConsoleFormatter:
             
             # Scripture References
             if references := data.get('references', []):
-                refs_table = Table(box=Box.ROUNDED, show_header=False, expand=True, border_style="blue")
+                refs_table = Table(box=ROUNDED, show_header=False, expand=True, border_style="blue")  # Use ROUNDED directly
                 refs_table.add_column("References")
                 for ref in references:
                     refs_table.add_row(f"• {ref}")
@@ -75,16 +75,16 @@ class ConsoleFormatter:
                     refs_table,
                     title="📖 Scripture References",
                     title_align="left",
-                    box=ROUNDED,
+                    box=ROUNDED,  # Use ROUNDED directly
                     border_style="blue",
                     padding=(1, 2),
                     expand=True
                 ))
             
-            # Application
+            # Application - Convert to Markdown
             if application := data.get('application', ''):
                 self.console.print(Panel(
-                    Text(application, style="yellow"),
+                    Markdown(application),  # Change from Text to Markdown
                     title="💡 Application",
                     title_align="left",
                     box=ROUNDED,
@@ -93,10 +93,10 @@ class ConsoleFormatter:
                     expand=True
                 ))
             
-            # Prayer Focus
+            # Prayer Focus - Convert to Markdown
             if prayer := data.get('prayer', ''):
                 self.console.print(Panel(
-                    Text(prayer, style="cyan"),
+                    Markdown(prayer),  # Change from Text to Markdown
                     title="🙏 Prayer Focus",
                     title_align="left",
                     box=ROUNDED,
@@ -107,7 +107,7 @@ class ConsoleFormatter:
             
             # Sources
             if sources := data.get('sources', []):
-                sources_table = Table(box=Box.ROUNDED, expand=True, border_style="dim white")
+                sources_table = Table(box=ROUNDED, expand=True, border_style="dim white")
                 sources_table.add_column("Title", style="cyan")
                 sources_table.add_column("Link", style="blue underline")
                 
@@ -180,9 +180,9 @@ class ConsoleFormatter:
             self.console.print(self._create_header("SPIRITUAL REFLECTION"))
             self.console.print(self._create_section_title(f"Reflecting on: {data['context_type']}", "💭"))
             
-            # Insights
+            # Insights - Convert to Markdown
             self.console.print(Panel(
-                Text(data['insights'], style="green"),
+                Markdown(data['insights']),  # Change from Text to Markdown
                 title="🤔 Insights",
                 title_align="left",
                 border_style="magenta",
@@ -191,9 +191,9 @@ class ConsoleFormatter:
                 expand=True
             ))
             
-            # Application
+            # Application - Convert to Markdown
             self.console.print(Panel(
-                Text(data['application'], style="yellow"),
+                Markdown(data['application']),  # Change from Text to Markdown
                 title="🔄 Personal Application",
                 title_align="left",
                 border_style="yellow",
@@ -202,9 +202,9 @@ class ConsoleFormatter:
                 expand=True
             ))
             
-            # Prayer Focus
+            # Prayer Focus - Convert to Markdown
             self.console.print(Panel(
-                Text(data['prayer'], style="cyan"),
+                Markdown(data['prayer']),  # Change from Text to Markdown
                 title="🙏 Prayer Focus",
                 title_align="left",
                 border_style="cyan",
