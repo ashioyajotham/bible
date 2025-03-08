@@ -1,71 +1,221 @@
-from colorama import init, Fore, Style, Back
+from rich.console import Console
+from rich.panel import Panel
+from rich.text import Text
+from rich.table import Table
+from rich.box import Box, ROUNDED, HEAVY, DOUBLE
+from rich.markdown import Markdown
+from rich.align import Align
+from rich.layout import Layout
 from typing import Dict, Any, List
 import textwrap
 from datetime import datetime
 
-init()
-
 class ConsoleFormatter:
     def __init__(self):
-        init()  # Initialize colorama
+        self.console = Console()
+        self.ascii_title = """
+  ____  _ _     _        _____ _             _         _         _     _              _   
+ |  _ \(_) |__ | | ___  / ____| |_ _   _  __| |_   _  / \   __ _(_)___| |_ __ _ _ __ | |_ 
+ | |_) | | '_ \| |/ _ \ \___ \| __| | | |/ _` | | | |/ _ \ / _` | / __| __/ _` | '_ \| __|
+ |  _ <| | |_) | |  __/  ___) | |_| |_| | (_| | |_| / ___ \ (_| | \__ \ || (_| | | | | |_ 
+ |_| \_\_|_.__/|_|\___| |____/ \__|\__,_|\__,_|\__, /_/   \_\__, |_|___/\__\__,_|_| |_|\__|
+                                               |___/        |___/                         
+ """
         
-    def _create_header(self, title: str) -> str:
-        """Create standardized header"""
-        return f"""
-{Fore.CYAN}╔{'═' * 70}╗
-║ {title.center(68)} ║
-╚{'═' * 70}╝{Style.RESET_ALL}"""
+    def _create_header(self, title: str) -> Panel:
+        """Create standardized header panel"""
+        return Panel(
+            Text(title, style="bold cyan", justify="center"),
+            box=DOUBLE,
+            border_style="cyan",
+            expand=True
+        )
 
-    def _create_section_title(self, title: str, icon: str) -> str:
+    def _create_section_title(self, title: str, icon: str) -> Panel:
         """Create standardized section title"""
-        return f"""\n{Fore.YELLOW}┌{'─' * 68}┐
-│ {Back.BLUE}{Fore.WHITE} {icon} {title.upper()} {Style.RESET_ALL}{Fore.YELLOW}
-└{'─' * 68}┘{Style.RESET_ALL}\n"""
+        return Panel(
+            Text(f"{icon} {title.upper()}", style="white on blue"),
+            box=ROUNDED,
+            border_style="yellow",
+            padding=(0, 2),
+            expand=True
+        )
 
     def format_teaching(self, data: Dict) -> str:
         """Format biblical teaching with enhanced styling"""
-        header = self._create_header("BIBLICAL TEACHING")
-        topic = self._create_section_title(data['query'], "📚")
-        
-        sections = [
-            ("🔍 Key Insights", data['insights']),
-            ("📖 Scripture References", data.get('references', [])),
-            ("💡 Application", data.get('application', '')),
-            ("🙏 Prayer Focus", data.get('prayer', ''))
-        ]
-        
-        content = self._format_sections(sections)
-        sources = self._format_sources(data['sources'])
-        footer = self._create_footer(f"Generated at {datetime.fromisoformat(data['timestamp']).strftime('%Y-%m-%d %H:%M:%S')}")
-        
-        return f"{header}{topic}{content}\n{sources}\n{footer}"
+        # Capture rich output as string
+        with self.console.capture() as capture:
+            self.console.print(self._create_header("BIBLICAL TEACHING"))
+            self.console.print(self._create_section_title(data['query'], "📚"))
+            
+            # Key Insights
+            self.console.print(Panel(
+                Text(data['insights'], style="green"),
+                title="🔍 Key Insights",
+                title_align="left",
+                box=ROUNDED,
+                border_style="magenta",
+                padding=(1, 2),
+                expand=True
+            ))
+            
+            # Scripture References
+            if references := data.get('references', []):
+                refs_table = Table(box=Box.ROUNDED, show_header=False, expand=True, border_style="blue")
+                refs_table.add_column("References")
+                for ref in references:
+                    refs_table.add_row(f"• {ref}")
+                self.console.print(Panel(
+                    refs_table,
+                    title="📖 Scripture References",
+                    title_align="left",
+                    box=ROUNDED,
+                    border_style="blue",
+                    padding=(1, 2),
+                    expand=True
+                ))
+            
+            # Application
+            if application := data.get('application', ''):
+                self.console.print(Panel(
+                    Text(application, style="yellow"),
+                    title="💡 Application",
+                    title_align="left",
+                    box=ROUNDED,
+                    border_style="yellow",
+                    padding=(1, 2),
+                    expand=True
+                ))
+            
+            # Prayer Focus
+            if prayer := data.get('prayer', ''):
+                self.console.print(Panel(
+                    Text(prayer, style="cyan"),
+                    title="🙏 Prayer Focus",
+                    title_align="left",
+                    box=ROUNDED,
+                    border_style="cyan",
+                    padding=(1, 2),
+                    expand=True
+                ))
+            
+            # Sources
+            if sources := data.get('sources', []):
+                sources_table = Table(box=Box.ROUNDED, expand=True, border_style="dim white")
+                sources_table.add_column("Title", style="cyan")
+                sources_table.add_column("Link", style="blue underline")
+                
+                for source in sources:
+                    sources_table.add_row(
+                        textwrap.shorten(source.get('title', 'N/A'), width=40),
+                        source.get('link', 'N/A')
+                    )
+                
+                self.console.print(Panel(
+                    sources_table,
+                    title="📚 Sources",
+                    title_align="left",
+                    box=ROUNDED,
+                    border_style="dim white",
+                    padding=(1, 2),
+                    expand=True
+                ))
+            
+            # Footer
+            timestamp = datetime.fromisoformat(data['timestamp']).strftime('%Y-%m-%d %H:%M:%S')
+            self.console.print(Panel(
+                Text(f"Generated at {timestamp}", style="dim", justify="center"),
+                box=DOUBLE,
+                border_style="cyan",
+                expand=True
+            ))
+            
+        return capture.get()
 
     def format_verse(self, data: Dict) -> str:
         """Format verse with devotional"""
-        header = self._create_header("DAILY VERSE & DEVOTIONAL")
-        verse_section = self._create_section_title(data['reference'], "📖")
-        
-        verse_text = f"{Fore.GREEN}{data['text']}{Style.RESET_ALL}"
-        devotional = self._format_section("🙏 Daily Devotional", data['devotional'])
-        footer = self._create_footer(f"Translation: {data['translation']}")
-        
-        return f"{header}{verse_section}{verse_text}\n{devotional}\n{footer}"
+        with self.console.capture() as capture:
+            self.console.print(self._create_header("DAILY VERSE & DEVOTIONAL"))
+            self.console.print(self._create_section_title(data['reference'], "📖"))
+            
+            # Verse text
+            self.console.print(Panel(
+                Text(data['text'], style="green italic"),
+                border_style="green",
+                box=ROUNDED,
+                padding=(1, 2),
+                expand=True
+            ))
+            
+            # Translation & reference footer
+            self.console.print(Text(
+                f"— {data['reference']} ({data['translation']})",
+                style="blue",
+                justify="right"
+            ))
+            
+            # Devotional
+            if devotional := data.get('devotional', ''):
+                self.console.print(Panel(
+                    Markdown(devotional),
+                    title="🙏 Daily Devotional",
+                    title_align="left",
+                    border_style="cyan",
+                    box=ROUNDED,
+                    padding=(1, 2),
+                    expand=True
+                ))
+            
+        return capture.get()
 
     def format_reflection(self, data: Dict) -> str:
         """Format reflection with context awareness"""
-        header = self._create_header("SPIRITUAL REFLECTION")
-        context = self._create_section_title(f"Reflecting on: {data['context_type']}", "💭")
-        
-        sections = [
-            ("🤔 Insights", data['insights']),
-            ("🔄 Personal Application", data['application']),
-            ("🙏 Prayer Focus", data['prayer'])
-        ]
-        
-        content = self._format_sections(sections)
-        footer = self._create_footer("May these insights deepen your faith journey")
-        
-        return f"{header}{context}{content}\n{footer}"
+        with self.console.capture() as capture:
+            self.console.print(self._create_header("SPIRITUAL REFLECTION"))
+            self.console.print(self._create_section_title(f"Reflecting on: {data['context_type']}", "💭"))
+            
+            # Insights
+            self.console.print(Panel(
+                Text(data['insights'], style="green"),
+                title="🤔 Insights",
+                title_align="left",
+                border_style="magenta",
+                box=ROUNDED,
+                padding=(1, 2),
+                expand=True
+            ))
+            
+            # Application
+            self.console.print(Panel(
+                Text(data['application'], style="yellow"),
+                title="🔄 Personal Application",
+                title_align="left",
+                border_style="yellow",
+                box=ROUNDED,
+                padding=(1, 2),
+                expand=True
+            ))
+            
+            # Prayer Focus
+            self.console.print(Panel(
+                Text(data['prayer'], style="cyan"),
+                title="🙏 Prayer Focus",
+                title_align="left",
+                border_style="cyan",
+                box=ROUNDED,
+                padding=(1, 2),
+                expand=True
+            ))
+            
+            # Footer
+            self.console.print(Panel(
+                Text("May these insights deepen your faith journey", style="italic", justify="center"),
+                box=DOUBLE,
+                border_style="cyan",
+                expand=True
+            ))
+            
+        return capture.get()
 
     def format_welcome(self) -> str:
         """Format welcome message with all commands"""
@@ -78,78 +228,139 @@ class ConsoleFormatter:
             'exit (q)': 'Exit application'
         }
 
-        header = self._create_header("BIBLE STUDY ASSISTANT")
-        command_list = "\n".join(
-            f"{Fore.YELLOW}{cmd:<15}{Style.RESET_ALL} - {desc}"
-            for cmd, desc in commands.items()
-        )
-        
-        return f"{header}\n\nAvailable Commands:\n{command_list}"
+        with self.console.capture() as capture:
+            # ASCII art title with gradient color
+            title_text = Text(self.ascii_title)
+            title_text.stylize("bold cyan")
+            self.console.print(title_text)
+            
+            self.console.print(Panel(
+                Text("BIBLE STUDY ASSISTANT", style="white on blue", justify="center"),
+                box=DOUBLE,
+                border_style="cyan",
+                expand=True
+            ))
+            
+            # Commands table
+            command_table = Table(box=ROUNDED, expand=True, show_header=False)
+            command_table.add_column("Command", style="yellow bold")
+            command_table.add_column("Description")
+            
+            for cmd, desc in commands.items():
+                command_table.add_row(cmd, desc)
+            
+            self.console.print(Panel(
+                command_table,
+                title="Available Commands",
+                title_align="left",
+                border_style="green",
+                box=ROUNDED,
+                padding=(1, 2),
+                expand=True
+            ))
+            
+            self.console.print(Text("\n🙏 Begin your spiritual journey with any command above...", style="italic cyan"))
+            
+        return capture.get()
 
     def format_export_success(self, filepath: str) -> str:
         """Format export success message"""
-        header = self._create_header("EXPORT SUCCESS")
-        content = f"""
-{Fore.GREEN}✅ Study session exported successfully!{Style.RESET_ALL}
-
-{Fore.YELLOW}📁 Location:{Style.RESET_ALL} {filepath}
-
-{Fore.BLUE}Open the file to view your study session in Markdown format.{Style.RESET_ALL}"""
-        
-        return f"{header}\n{content}"
-
-    # Helper methods
-    def _format_sections(self, sections: List[tuple]) -> str:
-        """Format multiple content sections"""
-        formatted = []
-        for icon_title, content in sections:
-            if content:  # Only include non-empty sections
-                section = f"\n{Fore.MAGENTA}{icon_title}:{Style.RESET_ALL}\n"
-                section += self._format_content_sections(content)
-                formatted.append(section)
-        return '\n'.join(formatted)
-
-    def _format_content_sections(self, content: str) -> str:
-        """Format content with borders and proper wrapping"""
-        if isinstance(content, list):
-            content = '\n'.join(f"• {item}" for item in content)
-        
-        parts = content.split('\n\n')
-        formatted = []
-        
-        for part in parts:
-            wrapped = textwrap.fill(part.strip(), width=65)
-            bordered = '\n'.join(f"{Fore.GREEN}│{Style.RESET_ALL} {line}" 
-                               for line in wrapped.split('\n'))
-            formatted.append(bordered)
-
-        return '\n\n'.join(formatted)
-
-    def _format_sources(self, sources: List[Dict]) -> str:
-        """Format source references with enhanced styling"""
-        formatted_sources = []
-        for i, source in enumerate(sources, 1):
-            source_text = (
-                f"{Fore.YELLOW}Source {i}:{Style.RESET_ALL}\n"
-                f"{Fore.CYAN}Title:{Style.RESET_ALL} {source.get('title', 'N/A')}\n"
-                f"{Fore.CYAN}Link: {Style.RESET_ALL}{source.get('link', 'N/A')}\n"
-                f"{Fore.CYAN}Summary:{Style.RESET_ALL} {textwrap.fill(source.get('snippet', 'N/A'), width=65)}"
+        with self.console.capture() as capture:
+            self.console.print(self._create_header("EXPORT SUCCESS"))
+            
+            layout = Layout()
+            layout.split(
+                Layout(name="upper"),
+                Layout(name="lower")
             )
-            formatted_sources.append(source_text)
-        
-        return "\n\n".join(formatted_sources)
+            
+            layout["upper"].update(Panel(
+                Text("✅ Study session exported successfully!", style="bold green", justify="center"),
+                box=ROUNDED,
+                border_style="green",
+                padding=(1, 2)
+            ))
+            
+            layout["lower"].update(Panel(
+                Text(f"📁 Location: {filepath}\n\nOpen the file to view your study session in Markdown format.",
+                     justify="left"),
+                box=ROUNDED,
+                border_style="blue",
+                padding=(1, 2)
+            ))
+            
+            self.console.print(layout)
+            
+        return capture.get()
 
-    def _format_section(self, title: str, content: str) -> str:
-        """Format a single section with title and content"""
-        section_title = f"\n{Fore.MAGENTA}{title}:{Style.RESET_ALL}\n"
-        wrapped_content = textwrap.fill(content.strip(), width=65)
-        bordered_content = '\n'.join(f"{Fore.GREEN}│{Style.RESET_ALL} {line}" 
-                                   for line in wrapped_content.split('\n'))
-        return f"{section_title}{bordered_content}"
+    def format_search_results(self, results: Dict[str, Any]) -> str:
+        """Format search results with enhanced styling"""
+        with self.console.capture() as capture:
+            self.console.print(self._create_header("BIBLICAL SEARCH RESULTS"))
+            self.console.print(self._create_section_title(f"Query: {results['query']}", "🔍"))
+            
+            # Insights
+            self.console.print(Panel(
+                Markdown(results['insights']),
+                title="📝 Theological Insights",
+                title_align="left",
+                border_style="magenta",
+                box=ROUNDED,
+                padding=(1, 2),
+                expand=True
+            ))
+            
+            # Sources
+            if sources := results.get('sources', []):
+                sources_table = Table(box=ROUNDED, expand=True)
+                sources_table.add_column("Title", style="cyan")
+                sources_table.add_column("Source", style="blue")
+                
+                for source in sources:
+                    sources_table.add_row(
+                        textwrap.shorten(source.get('title', 'N/A'), width=40),
+                        textwrap.shorten(source.get('link', 'N/A'), width=50)
+                    )
+                
+                self.console.print(Panel(
+                    sources_table,
+                    title="📚 Reference Sources",
+                    title_align="left",
+                    border_style="blue",
+                    box=ROUNDED,
+                    padding=(1, 2),
+                    expand=True
+                ))
+                
+        return capture.get()
 
-    def _create_footer(self, text: str) -> str:
-        """Create standardized footer"""
-        return f"""
-{Fore.CYAN}╔{'═' * 70}╗
-║ {text.center(68)} ║
-╚{'═' * 70}╝{Style.RESET_ALL}"""
+    def format_analysis(self, data: Dict[str, Any]) -> str:
+        """Format passage analysis"""
+        with self.console.capture() as capture:
+            self.console.print(self._create_header("BIBLICAL PASSAGE ANALYSIS"))
+            
+            # Passage
+            passage_panel = Panel(
+                Text(data['passage'], style="green italic"),
+                title="📜 Passage",
+                title_align="left",
+                box=ROUNDED,
+                border_style="green",
+                padding=(1, 2),
+                expand=True
+            )
+            self.console.print(passage_panel)
+            
+            # Analysis
+            analysis_panel = Panel(
+                Markdown(data['analysis']),
+                title="🔍 Analysis",
+                title_align="left",
+                box=ROUNDED,
+                border_style="magenta",
+                padding=(1, 2),
+                expand=True
+            )
+            self.console.print(analysis_panel)
+            
+        return capture.get()
