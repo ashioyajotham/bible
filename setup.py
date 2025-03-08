@@ -7,15 +7,15 @@ with open('README.md', encoding='utf-8') as f:
 
 setup(
     name="biblia",
-    version="0.3.5",
+    version="0.5.5",
     description="Bible Study Assistant for Christian Education and Research",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Victor Jotham Ashioya",
     author_email="victorashioya960@gmail.com",
     url="https://github.com/ashioyajotham/bible",
-    package_dir={"": "src"},
-    packages=find_packages(where="src"),
+    py_modules=["main"],
+    packages=find_packages(),
     install_requires=[
         "requests>=2.30.0",
         "python-dotenv>=1.0.0",
@@ -28,7 +28,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'bible=main:main',  # Command to run the application
+            'bible=main:main',  # Main application entry point
         ],
     },
     package_data={
