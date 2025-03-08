@@ -13,14 +13,20 @@ from datetime import datetime
 class ConsoleFormatter:
     def __init__(self):
         self.console = Console()
-        self.ascii_title = """
-  ____  _ _     _        _____ _             _         _         _     _              _   
- |  _ \(_) |__ | | ___  / ____| |_ _   _  __| |_   _  / \   __ _(_)___| |_ __ _ _ __ | |_ 
- | |_) | | '_ \| |/ _ \ \___ \| __| | | |/ _` | | | |/ _ \ / _` | / __| __/ _` | '_ \| __|
- |  _ <| | |_) | |  __/  ___) | |_| |_| | (_| | |_| / ___ \ (_| | \__ \ || (_| | | | | |_ 
- |_| \_\_|_.__/|_|\___| |____/ \__|\__,_|\__,_|\__, /_/   \_\__, |_|___/\__\__,_|_| |_|\__|
-                                               |___/        |___/                         
- """
+        # Fixed ASCII art for clearer rendering of "Bible Study Assistant"
+        self.ascii_title = r"""
+  ____  _  _     _        ____  _             _         
+ | __ )(_)| |__ | | ___  / ___|| |_ _   _  __| |_   _   
+ |  _ \| || '_ \| |/ _ \ \___ \| __| | | |/ _` | | | |  
+ | |_) | || |_) | |  __/  ___) | |_| |_| | (_| | |_| |  
+ |____/|_||_.__/|_|\___| |____/ \__|\__,_|\__,_|\__, |  
+  /\ \        (_)     | |              | |      |___/   
+ /  \ \ ___ ___ _ ___| |_ __ _ _ __ ___| |_            
+/ /\ \ / __/ __| / __| __/ _` | '_ \_  / __|           
+\ \_/ /\__ \__ \ \__ \ || (_| | | | / /\__ \           
+ \___/ |___/___/_|___/\__\__,_|_| |_\_\|___/           
+"""
+        self.tagline = "Deepening Your Spiritual Journey Through Scripture"
         
     def _create_header(self, title: str) -> Panel:
         """Create standardized header panel"""
@@ -233,6 +239,9 @@ class ConsoleFormatter:
             title_text = Text(self.ascii_title)
             title_text.stylize("bold cyan")
             self.console.print(title_text)
+            
+            # Add tagline below ASCII art
+            self.console.print(Align.center(Text(self.tagline, style="italic yellow")))
             
             self.console.print(Panel(
                 Text("BIBLE STUDY ASSISTANT", style="white on blue", justify="center"),
