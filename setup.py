@@ -7,13 +7,14 @@ with open('README.md', encoding='utf-8') as f:
 
 setup(
     name="biblia",
-    version="0.5.0",
+    version="0.5.5",
     description="Bible Study Assistant for Christian Education and Research",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Victor Jotham Ashioya",
     author_email="victorashioya960@gmail.com",
     url="https://github.com/ashioyajotham/bible",
+    py_modules=["main"],
     packages=find_packages(),
     install_requires=[
         "requests>=2.30.0",
