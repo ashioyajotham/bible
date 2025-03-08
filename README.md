@@ -18,12 +18,6 @@ An intelligent assistant for biblical study and spiritual growth that combines m
 <details>
 <summary>Click to see Biblia in action</summary>
 
-### Welcome Screen
-![Welcome Screen](https://raw.githubusercontent.com/ashioyajotham/bible/main/docs/images/welcome.png)
-
-### Biblical Teaching
-![Teaching Example](https://raw.githubusercontent.com/ashioyajotham/bible/main/docs/images/teaching.png)
-
 ### Daily Verse
 ![Daily Verse](https://raw.githubusercontent.com/ashioyajotham/bible/main/docs/images/verse.png)
 
