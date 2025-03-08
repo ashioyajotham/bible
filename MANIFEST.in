@@ -3,4 +3,12 @@ include LICENSE
 include pyproject.toml
 include setup.py
 include requirements.txt
-recursive-include src *.py *.json *.yml *.md
+include *.py
+include *.json
+include *.yml
+include *.md
+recursive-include agent *.py
+recursive-include models *.py
+recursive-include services *.py
+recursive-include utils *.py
+recursive-include config *.py
