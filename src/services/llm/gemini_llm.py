@@ -6,10 +6,10 @@ from typing import Optional
 class GeminiLLM:
     def __init__(self, api_key: str):
         try:
-            self.model_type = ModelType.GEMINI  # Add model type
-            self.model_id = "gemini-pro"
+            self.model_type = ModelType.GEMINI
+            self.model_id = "gemini-1.5-flash"
             genai.configure(api_key=api_key)
-            self.model = genai.GenerativeModel('gemini-pro')
+            self.model = genai.GenerativeModel('gemini-1.5-flash')
             logging.info(f"Initialized {self.model_id}")
             
         except Exception as e:
