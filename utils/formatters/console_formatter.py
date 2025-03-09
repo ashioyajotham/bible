@@ -13,7 +13,7 @@ from datetime import datetime
 class ConsoleFormatter:
     def __init__(self):
         self.console = Console()
-        # Fixed ASCII art for clearer rendering of "Bible Study Assistant"
+        # ASCII art for clearer rendering of "Bible Study Assistant"
         self.ascii_title = r"""
   ____  _  _     _        ____  _             _         
  | __ )(_)| |__ | | ___  / ___|| |_ _   _  __| |_   _   
