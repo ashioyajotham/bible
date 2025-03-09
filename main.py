@@ -55,15 +55,26 @@ def resolve_command(input_cmd: str) -> Optional[str]:
 def main():
     """Main entry point with enhanced error handling"""
     console = Console()
+    
+    # Add command-line flag to control verbosity
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose logging with debug output")
+    args, unknown = parser.parse_known_args()
+    log_level = logging.DEBUG if args.verbose else logging.INFO
+    logging.basicConfig(level=log_level)
+    
+    if not args.verbose:
+        console.print("[bold yellow]Running in delightful mode. For deeper insights, try '--verbose'.[/bold yellow]")
+        console.rule("[bold blue]Welcome to Biblia - Your Spiritual Companion[/bold blue]")
+    else:
+        console.print("[bold magenta]Verbose mode enabled. Brace for the deep technical insight![/bold magenta]")
+    
     try:
-        logging.basicConfig(level=logging.DEBUG)
         agent = BibleAgent()
-        
-        # Verify critical components
         if not agent._models:
             raise Exception("Model system failed to initialize")
             
-        # Use rich formatted welcome message
+        # Show the welcome message with creative styling
         print(agent.console_formatter.format_welcome())
         
         while True:
@@ -73,17 +84,14 @@ def main():
                 
                 if resolved_cmd:
                     result = agent.process_command(resolved_cmd)
-                    if result is None:
-                        print("Command failed. Please check the logs and try again.")
+                    if result is None and resolved_cmd != "reflect":
+                        console.print("[bold red]Command failed. Please check the logs and try again.[/bold red]")
                 else:
-                    print(f"Unknown command. Type 'h' for help.")
+                    console.print("[bold red]Unknown command. Type 'h' for help.[/bold red]")
             except KeyboardInterrupt:
-                # Handle Ctrl+C gracefully
                 console.print("\n\n[bold green]👋 Goodbye! God bless your spiritual journey.[/bold green]")
                 sys.exit(0)
-                
     except KeyboardInterrupt:
-        # Handle Ctrl+C outside the input loop
         console.print("\n\n[bold green]👋 Goodbye! God bless your spiritual journey.[/bold green]")
         sys.exit(0)
     except Exception as e:

@@ -663,12 +663,18 @@ class BibleAgent(BaseAgent):
             
             # Get latest content from session
             if not self.current_session:
-                print("No active study session to reflect on.")
+                self.console_formatter.console.print(
+                    "[bold red]No active study session found. "
+                    "Please initiate a study session by using the 'teach' or 'verse' command and then try reflecting.[/bold red]"
+                )
                 return None
             
             content = self.current_session.get_latest_content()
             if not content:
-                print("Nothing to reflect on. Try studying a topic first.")
+                self.console_formatter.console.print(
+                    "[bold red]No study content available to reflect on. "
+                    "Please begin with a teaching or daily verse command to start your study session.[/bold red]"
+                )
                 return None
             
             # More structured prompt

@@ -40,12 +40,27 @@ class Config:
     
     @classmethod
     def validate(cls) -> bool:
-        """Validate required configuration"""
-        required_keys = ['GEMINI_API_KEY', 'SERPER_API_KEY']
-        missing = [key for key in required_keys if not getattr(cls, key)]
-        
-        if missing:
-            raise ValueError(f"Missing required configuration: {', '.join(missing)}")
+        """Validate required configuration with interactive input if missing,
+        and optionally persist them in a .env file for future use."""
+        required_keys = ['GEMINI_API_KEY', 'SERPER_API_KEY', 'ESV_API_KEY']
+        updated = False
+        missing_entries = []
+        for key in required_keys:
+            if not os.getenv(key):
+                value = input(f"API key for {key} not found. Please enter it: ").strip()
+                if not value:
+                    print(f"{key} is required. Exiting.")
+                    return False
+                os.environ[key] = value
+                missing_entries.append(f"{key}={value}")
+                updated = True
+        if updated:
+            choice = input("Would you like to save these API keys to a .env file for future use? (y/n): ").strip().lower()
+            if choice == 'y':
+                with open('.env', 'a') as f:
+                    for entry in missing_entries:
+                        f.write(f"\n{entry}")
+                print("API keys saved to .env file.")
         return True
     
     @classmethod
