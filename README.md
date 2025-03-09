@@ -2,7 +2,7 @@
 
 An intelligent assistant for biblical study and spiritual growth that combines modern AI with scriptural wisdom, featuring beautiful terminal-based UI.
 
-![Biblia Terminal UI](https://raw.githubusercontent.com/ashioyajotham/bible/main/docs/images/terminal_ui.png)
+![Biblia Terminal UI](docs/images/terminal_ui.png)
 
 ## ✨ Features
 
@@ -19,7 +19,7 @@ An intelligent assistant for biblical study and spiritual growth that combines m
 <summary>Click to see Biblia in action</summary>
 
 ### Daily Verse
-![Daily Verse](https://raw.githubusercontent.com/ashioyajotham/bible/main/docs/images/verse.png)
+![Daily Verse](docs/images/verse.png)
 
 </details>
 
