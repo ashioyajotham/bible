@@ -84,7 +84,7 @@ def main():
                 
                 if resolved_cmd:
                     result = agent.process_command(resolved_cmd)
-                    if result is None:
+                    if result is None and resolved_cmd != "reflect":
                         console.print("[bold red]Command failed. Please check the logs and try again.[/bold red]")
                 else:
                     console.print("[bold red]Unknown command. Type 'h' for help.[/bold red]")
